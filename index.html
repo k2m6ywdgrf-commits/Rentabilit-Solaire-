@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Suivi Solaire - Liquid Glass Dark</title>
+    <title>Suivi Solaire - Liquid Glass Dark Ultra-Simplifié</title>
     <!-- Chart.js pour les graphiques -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
@@ -13,7 +13,7 @@
             --background: #000000; /* Fond noir pur de l'iPhone */
             --text-main: #f8fafc;
             --text-muted: #94a3b8;
-            --text-projected: #64748b; /* Gris clair tamisé pour les projections sur fond noir */
+            --text-projected: #64748b; /* Gris clair tamisé pour les projections */
             --danger: #ff453a; /* Rouge iOS */
             
             /* Variables Liquid Glass */
@@ -52,7 +52,6 @@
             overflow: hidden;
         }
         
-        /* Reflet de lumière vitreux sur le haut des cartes */
         .card::before {
             content: ''; position: absolute; top: 0; left: 0; right: 0; height: 50%;
             background: linear-gradient(180deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0) 100%);
@@ -61,14 +60,15 @@
 
         .card-title { font-size: 16px; font-weight: 600; margin-bottom: 20px; color: #fff; text-shadow: 0 1px 2px rgba(0,0,0,0.5); }
         
-        /* Formulaires au look iPhone nocturne */
+        /* Formulaires */
         .form-group { margin-bottom: 18px; display: flex; flex-direction: column; gap: 8px; }
         label { font-size: 13px; font-weight: 600; color: #e2e8f0; }
+        .auto-badge { font-size: 14px; color: #30d158; font-weight: bold; background: rgba(48, 209, 88, 0.1); padding: 8px 12px; border-radius: 8px; border: 1px solid rgba(48, 209, 88, 0.2); width: fit-content; }
         input, select { padding: 12px; background: rgba(0, 0, 0, 0.5); border: 1px solid rgba(255, 255, 255, 0.15); border-radius: 10px; font-size: 15px; color: #fff; transition: all 0.2s; }
         input:focus { outline: none; border-color: var(--secondary); box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3); }
         .help-text { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
         
-        /* Bouton au look Liquid Glass */
+        /* Bouton Liquid Glass */
         button.btn { 
             padding: 14px; 
             background: linear-gradient(180deg, rgba(59, 130, 246, 0.8) 0%, rgba(29, 78, 216, 0.8) 100%); 
@@ -108,18 +108,14 @@
         .badge.real { background: rgba(48, 209, 88, 0.15); color: #30d158; border: 1px solid rgba(48, 209, 88, 0.2); }
         .badge.proj { background: rgba(255, 255, 255, 0.05); color: var(--text-projected); border: 1px solid rgba(255,255,255,0.05); }
 
-        /* LE FUTUR NON SAISI : Visuel gris clair et italique */
+        /* Projections : Gris clair et Italique */
         .projected-row { 
             color: var(--text-projected) !important; 
             font-style: italic !important;
-            opacity: 0.55; /* Effet de transparence futuriste */
+            opacity: 0.55;
         }
-        .projected-row td {
-            color: var(--text-projected) !important;
-        }
-        .projected-row .special-val {
-            color: var(--text-projected) !important;
-        }
+        .projected-row td { color: var(--text-projected) !important; }
+        .projected-row .special-val { color: var(--text-projected) !important; }
     </style>
 </head>
 <body>
@@ -127,13 +123,13 @@
 <div class="container">
     <header>
         <h1>☀️ Tableau de Bord Solaire</h1>
-        <div class="subtitle">Interface Liquid Glass iPhone • Fond Sombre</div>
+        <div class="subtitle">Interface Liquid Glass iPhone • Automatisation Maximale</div>
     </header>
 
     <!-- Navigation -->
     <div class="tabs">
         <button class="tab-btn active" onclick="openTab('graphiques')">📊 Rendement</button>
-        <button class="tab-btn" onclick="openTab('saisie')">✍️ Saisie</button>
+        <button class="tab-btn" onclick="openTab('saisie')">✍️ Saisie Rapide</button>
         <button class="tab-btn" onclick="openTab('config')">⚙️ Variables</button>
     </div>
 
@@ -170,7 +166,7 @@
         </div>
 
         <div class="card">
-            <div class="card-title">📋 Synthèse Chronologique (Lignes estompées/italique = projections)</div>
+            <div class="card-title">📋 Synthèse Chronologique (Gris & italique = projections calculées)</div>
             <div class="table-container">
                 <table id="summaryTable">
                     <thead>
@@ -192,33 +188,33 @@
         </div>
     </div>
 
-    <!-- ONGLET 2 : SAISIE -->
+    <!-- ONGLET 2 : SAISIE (Champs automatisés) -->
     <div id="saisie" class="tab-content">
         <div class="grid-2">
             <div class="card">
-                <div class="card-title">➕ Entrée Facture Annuelle</div>
+                <div class="card-title">➕ Ajouter la Prochaine Période</div>
                 <form id="dataForm" onsubmit="saveRow(event)">
                     <div class="form-group">
-                        <label>Période comptable</label>
-                        <input type="text" id="form-date" placeholder="ex: juin-26" required>
+                        <label>Prochaine Période (Générée automatiquement)</label>
+                        <div id="auto-date-badge" class="auto-badge">...</div>
                     </div>
                     <div class="form-group">
-                        <label>Désignation</label>
-                        <input type="text" id="form-detail" placeholder="ex: Année 3" required>
+                        <label>Désignation (Générée automatiquement)</label>
+                        <div id="auto-detail-badge" class="auto-badge">...</div>
                     </div>
                     <div class="form-group">
                         <label>Montant Facture Électricité TTC (€)</label>
-                        <input type="number" step="0.01" id="form-facture" placeholder="0.00" required>
+                        <input type="number" step="0.01" id="form-facture" placeholder="ex: 1850.50" required>
                     </div>
                     <div class="form-group">
                         <label>Consommation d'énergie (kWh)</label>
-                        <input type="number" id="form-kwh" placeholder="0" required>
+                        <input type="number" id="form-kwh" placeholder="ex: 7200" required>
                     </div>
                     <div class="form-group">
                         <label>Montant de la Revente Surplus (€)</label>
-                        <input type="number" step="0.01" id="form-revente" value="0" required>
+                        <input type="number" step="0.01" id="form-revente" placeholder="ex: 1100.00" required>
                     </div>
-                    <button type="submit" class="btn">Enregistrer la période</button>
+                    <button type="submit" class="btn">Valider et Enregistrer l'Année</button>
                 </form>
             </div>
 
@@ -270,9 +266,9 @@
         { date: "juin-25", detail: "Année 2", facture: 1869.64, kwh: 7375, revente: 1082.70 }
     ];
 
-    let appData = JSON.parse(localStorage.getItem('solar_data_dark_v1')) || defaultData;
-    let appInvest = parseFloat(localStorage.getItem('solar_invest_dark_v1')) || 14430.00;
-    let refKwh = parseInt(localStorage.getItem('solar_ref_kwh_dark_v1')) || 10225;
+    let appData = JSON.parse(localStorage.getItem('solar_data_dark_v2')) || defaultData;
+    let appInvest = parseFloat(localStorage.getItem('solar_invest_dark_v2')) || 14430.00;
+    let refKwh = parseInt(localStorage.getItem('solar_ref_kwh_dark_v2')) || 10225;
 
     let roiChartInstance = null;
     let breakdownChartInstance = null;
@@ -283,13 +279,44 @@
         document.getElementById(tabId).classList.add('active');
         event.currentTarget.classList.add('active');
         if(tabId === 'graphiques') calculateAndRender();
+        if(tabId === 'saisie') updateAutoFields();
+    }
+
+    // Calcule automatiquement la prochaine date et désignation par rapport au dernier élément réel
+    function getNextPeriodSpecs() {
+        if (appData.length === 0) {
+            return { date: "juin-23", detail: "Année de référence" };
+        }
+        
+        let lastRow = appData[appData.length - 1];
+        let parts = lastRow.date.split('-');
+        let nextYearNum = 24;
+        
+        if (parts.length > 1) {
+            nextYearNum = parseInt(parts[1]) + 1;
+        }
+
+        // Tente de trouver le numéro de l'année à incrémenter
+        let nextYearCount = appData.length; 
+        let nextDetail = `Année ${nextYearCount}`;
+        
+        return {
+            date: `juin-${nextYearNum}`,
+            detail: nextDetail
+        };
+    }
+
+    function updateAutoFields() {
+        const specs = getNextPeriodSpecs();
+        document.getElementById('auto-date-badge').innerText = specs.date;
+        document.getElementById('auto-detail-badge').innerText = specs.detail;
     }
 
     function saveConfig() {
         appInvest = parseFloat(document.getElementById('config-invest').value) || 0;
         refKwh = parseInt(document.getElementById('config-ref-kwh').value) || 10225;
-        localStorage.setItem('solar_invest_dark_v1', appInvest);
-        localStorage.setItem('solar_ref_kwh_dark_v1', refKwh);
+        localStorage.setItem('solar_invest_dark_v2', appInvest);
+        localStorage.setItem('solar_ref_kwh_dark_v2', refKwh);
         alert("Paramètres enregistrés !");
         calculateAndRender();
     }
@@ -304,34 +331,38 @@
             document.getElementById('config-ref-kwh').value = "10225";
             initSaisieTab();
             calculateAndRender();
+            updateAutoFields();
         }
     }
 
     function saveRow(e) {
         e.preventDefault();
-        const date = document.getElementById('form-date').value.trim();
-        const detail = document.getElementById('form-detail').value.trim();
+        
+        // Récupération automatique de la période/désignation
+        const specs = getNextPeriodSpecs();
         const facture = parseFloat(document.getElementById('form-facture').value) || 0;
         const kwh = parseInt(document.getElementById('form-kwh').value) || 0;
         const revente = parseFloat(document.getElementById('form-revente').value) || 0;
 
-        const newRow = { date, detail, facture, kwh, revente };
+        const newRow = { date: specs.date, detail: specs.detail, facture, kwh, revente };
+        
+        // Empêche les doublons accidentels
         appData = appData.filter(r => r.date !== newRow.date);
         appData.push(newRow);
-        appData.sort((a,b) => a.date.localeCompare(b.date));
 
-        localStorage.setItem('solar_data_dark_v1', JSON.stringify(appData));
+        localStorage.setItem('solar_data_dark_v2', JSON.stringify(appData));
         document.getElementById('dataForm').reset();
-        document.getElementById('form-revente').value = "0";
         initSaisieTab();
-        alert("Période ajoutée avec succès !");
+        updateAutoFields();
+        alert(`Période ${specs.date} enregistrée avec succès !`);
     }
 
     function deleteRow(date) {
-        if(confirm(`Supprimer la ligne du ${date} ?`)) {
+        if(confirm(`Supprimer la ligne du ${date} ? (Attention, cela décalera la prochaine création automatique)`)) {
             appData = appData.filter(r => r.date !== date);
-            localStorage.setItem('solar_data_dark_v1', JSON.stringify(appData));
+            localStorage.setItem('solar_data_dark_v2', JSON.stringify(appData));
             initSaisieTab();
+            updateAutoFields();
         }
     }
 
@@ -391,6 +422,7 @@
 
         let fullDashboardData = processedRealRows.map(r => ({...r, isReal: true}));
         let simulatedRenta = appInvest - totalGainsReels;
+        
         let lastDateYear = 25; 
         if(appData.length > 0) {
             let parts = appData[appData.length - 1].date.split('-');
@@ -474,8 +506,10 @@
         });
     }
 
+    // Démarrage
     initSaisieTab();
     calculateAndRender();
+    updateAutoFields();
 </script>
 
 </body>
