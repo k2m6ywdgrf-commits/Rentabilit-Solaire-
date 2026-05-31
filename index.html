@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Suivi & Rentabilité Panneaux Solaires</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --primary: #10b981;
+            --primary-dark: #059669;
+            --secondary: #3b82f6;
+            --background: #f8fafc;
+            --card-bg: #ffffff;
+            --text-main: #1e293b;
+            --text-muted: #64748b;
+            --border: #e2e8f0;
+            --danger: #ef4444;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: var(--background);
+            color: var(--text-main);
+            padding: 24px;
+            line-height: 1.5;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        header {
+            margin-bottom: 32px;
+            border-bottom: 2px solid var(--border);
+            padding-bottom: 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 16px;
+        }
+
+        h1 {
+            font-size: 24px;
+            color: var(--text-main);
+        }
+
+        .subtitle {
+            color: var(--text-muted);
+            font-size: 14px;
+            margin-top: 4px;
+        }
+
+        /* KPI Cards */
+        .kpi-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 20px;
+            margin-bottom: 32px;
+        }
+
+        .kpi-card {
+            background: var(--card-bg);
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+            border: 1px solid var(--border);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .kpi-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 4px;
+            height: 100%;
+            background-color: var(--primary);
+        }
+
+        .kpi-card.investment::before { background-color: var(--secondary); }
+        .kpi-card.remaining::before { background-color: var(--danger); }
+
+        .kpi-label {
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--text-muted);
+            font-weight: 600;
+        }
+
+        .kpi-value {
+            font-size: 24px;
+            font-weight: 700;
+            margin-top: 8px;
+        }
+
+        /* Layout */
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 24px;
+            margin-bottom: 32px;
+        }
+
+        @media (max-width: 900px) {
+            .dashboard-grid { grid-template-columns: 1fr; }
+        }
+
+        .card {
+            background: var(--card-bg);
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+            border: 1px solid var(--border);
+            padding: 24px;
+        }
+
+        .card-title {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 20px;
+            color: var(--text-main);
+        }
+
+        /* Table */
+        .table-container { overflow-x: auto; margin-top: 12px; }
+        table { width: 100%; border-collapse: collapse; text-align: left; font-size: 14px; }
+        th { background-color: #f1f5f9; color: var(--text-muted); padding: 12px; font-weight: 600; border-bottom: 2px solid var(--border); }
+        td { padding: 12px; border-bottom: 1px solid var(--border); }
+        tr:hover { background-color: #f8fafc; }
+        
+        .badge { display: inline-block; padding: 4px 8px; border-radius: 6px; font-size: 12px; font-weight: 500; }
+        .badge.success { background-color: #d1fae5; color: #065f46; }
+        .badge.info { background-color: #dbeafe; color: #1e40af; }
+        .projected-row { color: var(--text-muted); font-style: italic; background-color: #fafafa; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <div>
+            <h1>☀️ Suivi de Rentabilité Solaire</h1>
+            <div class="subtitle">Installation Décembre 2023 — Tableau de bord interactif</div>
+        </div>
+        <div style="font-size: 14px; background: #e2e8f0; padding: 6px 12px; border-radius: 20px; font-weight: 500;">
+            GitHub Pages Ready 🚀
+        </div>
+    </header>
+
+    <div class="kpi-container">
+        <div class="kpi-card investment">
+            <div class="kpi-label">Investissement Initial</div>
+            <div class="kpi-value" id="kpi-invest">14 430,00 €</div>
+        </div>
+        <div class="kpi-card">
+            <div class="kpi-label">Gains Cumulés (Éco + Revente)</div>
+            <div class="kpi-value" id="kpi-gains" style="color: var(--primary);">0 €</div>
+        </div>
+        <div class="kpi-card remaining">
+            <div class="kpi-label">Reste à Amortir</div>
+            <div class="kpi-value" id="kpi-rest" style="color: var(--danger);">0 €</div>
+        </div>
+        <div class="kpi-card">
+            <div class="kpi-label">Temps de retour total estimé</div>
+            <div class="kpi-value" id="kpi-years" style="color: var(--secondary);">Calcul...</div>
+        </div>
+    </div>
+
+    <div class="dashboard-grid">
+        <div class="card">
+            <div class="card-title">📉 Évolution du Seuil de Rentabilité (Payback Curve)</div>
+            <div style="position: relative; height:320px; width:100%">
+                <canvas id="roiChart"></canvas>
+            </div>
+        </div>
+        <div class="card">
+            <div class="card-title">⚡ Gains Réels vs Factures</div>
+            <div style="position: relative; height:320px; width:100%">
+                <canvas id="breakdownChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <div class="card" style="margin-bottom: 40px;">
+        <div class="card-title">📋 Tableau de suivi Historique & Prévisionnel</div>
+        <div class="table-container">
+            <table id="dataTable">
+                <thead>
+                    <tr>
+                        <th>Période</th>
+                        <th>Statut</th>
+                        <th>Facture TTC</th>
+                        <th>Conso (KWH)</th>
+                        <th>Tarif 1 KWH</th>
+                        <th>Économies (€)</th>
+                        <th>Revente (€)</th>
+                        <th>Gains Annuels</th>
+                        <th>Reste à amortir</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+    const prixInitial = 14430.00;
+    
+    // Vos données réelles (issues de votre Excel)
+    const rawData = [
+        { date: "juin-23", detail: "Réf. (Avant panneaux)", facture: 1893.05, kwh: 10225, tarif: 0.19, economies: 0, revente: 0, isReal: true },
+        { date: "juin-24", detail: "1/2 Année Solaire", facture: 2309.18, kwh: 9882, tarif: 0.23, economies: 80.15, revente: 0, isReal: true },
+        { date: "juin-25", detail: "Année complète 2", facture: 1869.64, kwh: 7375, tarif: 0.25, economies: 722.50, revente: 1082.70, isReal: true }
+    ];
+
+    // Base de calcul de projection : Économies + Revente constatées sur la dernière année complète (2025)
+    const gainsAnnuelsMoyens = 722.50 + 1082.70; 
+
+    let fullData = [...rawData];
+    let currentRenta = 12544.64; 
+    let currentYearNum = 3;
+
+    // Génération automatique des projections futures jusqu'au point zéro
+    for (let i = 0; i < 12; i++) {
+        let yearLabel = 2025 + i + 1;
+        currentRenta -= gainsAnnuelsMoyens;
+        if (currentRenta < 0) currentRenta = 0;
+        
+        fullData.push({
+            date: `juin-${String(yearLabel).slice(-2)}`,
+            detail: `Projection (Année ${currentYearNum})`,
+            facture: 1869.64,
+            kwh: 7375,
+            tarif: 0.25,
+            economies: 722.50,
+            revente: 1082.70,
+            isReal: false
+        });
+        currentYearNum++;
+        if (currentRenta <= 0) break;
+    }
+
+    // Traitement des totaux pour l'en-tête KPI
+    const totalGainsReels = rawData.reduce((acc, row) => acc + row.economies + row.revente, 0);
+    const resteAAmortirReel = prixInitial - totalGainsReels;
+    const tempsTotalEstime = 1.5 + (resteAAmortirReel / gainsAnnuelsMoyens); // 1.5 an d'historique + reste
+
+    document.getElementById('kpi-gains').innerText = totalGainsReels.toLocaleString('fr-FR', { minimumFractionDigits: 2 }) + " €";
+    document.getElementById('kpi-rest').innerText = resteAAmortirReel.toLocaleString('fr-FR', { minimumFractionDigits: 2 }) + " €";
+    document.getElementById('kpi-years').innerText = `~ ${tempsTotalEstime.toFixed(1)} Ans`;
+
+    // Remplissage du tableau
+    const tbody = document.querySelector('#dataTable tbody');
+    let cumulGains = 0;
+    let gainsCumulesSerie = [];
+
+    fullData.forEach((row) => {
+        const tr = document.createElement('tr');
+        if (!row.isReal) tr.classList.add('projected-row');
+
+        const gainAnnuel = row.economies + row.revente;
+        cumulGains += gainAnnuel;
+        gainsCumulesSerie.push(cumulGains);
+        
+        let capRestant = Math.max(0, prixInitial - cumulGains);
+
+        tr.innerHTML = `
+            <td><b>${row.date}</b></td>
+            <td><span class="badge ${row.isReal ? 'success' : 'info'}">${row.detail}</span></td>
+            <td>${row.facture.toLocaleString('fr-FR', {minimumFractionDigits: 2})} €</td>
+            <td>${row.kwh}</td>
+            <td>${row.tarif.toFixed(2)} €</td>
+            <td>${row.economies > 0 ? row.economies.toLocaleString('fr-FR', {minimumFractionDigits: 2}) + ' €' : '-'}</td>
+            <td>${row.revente > 0 ? row.revente.toLocaleString('fr-FR', {minimumFractionDigits: 2}) + ' €' : '-'}</td>
+            <td style="font-weight:600; color:var(--primary)">${gainAnnuel > 0 ? gainAnnuel.toLocaleString('fr-FR', {minimumFractionDigits: 2}) + ' €' : '-'}</td>
+            <td style="font-weight:600; color:${capRestant > 0 ? 'var(--danger)' : 'var(--primary)'}">${capRestant.toLocaleString('fr-FR', {minimumFractionDigits: 2})} €</td>
+        `;
+        tbody.appendChild(tr);
+    });
+
+    // --- CONFIGURATION DES GRAPHIQUES ---
+    const labels = fullData.map(d => d.date);
+    
+    // Graphique 1 : Courbe ROI
+    new Chart(document.getElementById('roiChart').getContext('2d'), {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [
+                {
+                    label: 'Investissement initial (14 430 €)',
+                    data: Array(fullData.length).fill(prixInitial),
+                    borderColor: '#ef4444',
+                    borderDash: [6, 6],
+                    borderWidth: 2,
+                    pointRadius: 0,
+                    fill: false
+                },
+                {
+                    label: 'Gains cumulés (€)',
+                    data: gainsCumulesSerie,
+                    borderColor: '#10b981',
+                    backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                    borderWidth: 3,
+                    pointBackgroundColor: '#10b981',
+                    fill: true,
+                    tension: 0.1
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: { y: { beginAtZero: true, ticks: { callback: v => v + ' €' } } }
+        }
+    });
+
+    // Graphique 2 : Barres Comparatif
+    new Chart(document.getElementById('breakdownChart').getContext('2d'), {
+        type: 'bar',
+        data: {
+            labels: rawData.map(d => d.date),
+            datasets: [
+                { label: 'Facture Électricité', data: rawData.map(d => d.facture), backgroundColor: '#3b82f6' },
+                { label: 'Gains (Éco + Revente)', data: rawData.map(d => d.economies + d.revente), backgroundColor: '#10b981' }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: { y: { beginAtZero: true, ticks: { callback: v => v + ' €' } } }
+        }
+    });
+</script>
+</body>
+</html>
