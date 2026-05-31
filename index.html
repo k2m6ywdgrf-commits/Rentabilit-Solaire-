@@ -3,8 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Suivi Solaire - Liquid Glass Transposed</title>
-    <!-- Chart.js pour les graphiques -->
+    <title>Suivi Solaire - Liquid Glass Transposed Fixed</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         :root {
@@ -78,47 +77,56 @@
         .kpi-label { font-size: 10px; color: var(--text-muted); font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
         .kpi-value { font-size: 16px; font-weight: 700; margin-top: 4px; }
 
-        /* --- NOUVEAU DESIGN DE TABLEAU INVERSÉ (SCROLL HORIZONTAL FLUIDE) --- */
+        /* --- TABLEAU INVERSÉ ENTIÈREMENT CORRIGÉ (PREMIÈRE COLONNE OPAQUE) --- */
         .table-container { 
             width: 100%; 
-            overflow-x: auto; /* Permet le glissement horizontal sur l'iPhone */
+            overflow-x: auto; 
             -webkit-overflow-scrolling: touch;
             border-radius: 8px;
         }
         
         table.transposed-table { 
-            width: max-content; /* Force le tableau à s'étendre en largeur plutôt qu'à se tasser */
+            width: max-content; 
             min-width: 100%;
             border-collapse: collapse; 
             font-size: 13px; 
         }
 
-        /* La première colonne (les titres des lignes) reste fixe ou bien visible */
+        /* Première colonne STRICTEMENT OPAQUE pour éviter l'effet translucide superposé */
         table.transposed-table td.row-header { 
-            background: rgba(255, 255, 255, 0.07); 
-            color: var(--text-muted); 
+            background-color: #000000 !important; /* Noir pur opaque égal au fond de l'iPhone */
+            color: #ffffff; 
             font-weight: 600; 
             position: sticky; 
             left: 0; 
-            z-index: 2;
-            width: 130px;
-            min-width: 130px;
-            border-right: 2px solid rgba(255,255,255,0.12);
+            z-index: 10; /* Priorité d'affichage au-dessus des autres cellules */
+            width: 135px;
+            min-width: 135px;
+            border-right: 3px solid rgba(255, 255, 255, 0.25); /* Bordure plus prononcée pour séparer */
+            text-align: left;
+            padding-left: 8px;
         }
 
         table.transposed-table td, table.transposed-table th { 
             padding: 10px 14px; 
-            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-            border-right: 1px solid rgba(255, 255, 255, 0.03);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            border-right: 1px solid rgba(255, 255, 255, 0.04);
             text-align: center;
         }
 
         /* En-têtes des années (première ligne) */
         table.transposed-table tr.years-header th {
-            background: rgba(255, 255, 255, 0.03);
+            background: rgba(255, 255, 255, 0.04);
             color: #fff;
             font-weight: 700;
             font-size: 14px;
+        }
+
+        /* Forcer la cellule d'intersection haut/gauche à rester noire opaque aussi */
+        table.transposed-table tr.years-header td.row-header {
+            background-color: #000000 !important;
+            color: var(--text-muted);
+            font-size: 12px;
         }
 
         .btn-danger { background: rgba(255, 69, 58, 0.2); color: #ff453a; border: 1px solid rgba(255, 69, 58, 0.3); padding: 4px 8px; border-radius: 6px; font-size: 11px; cursor: pointer; }
@@ -144,17 +152,15 @@
 <div class="container">
     <header>
         <h1>☀️ Tableau de Bord Solaire</h1>
-        <div class="subtitle">Vue Transposée • Glissez horizontalement pour voir les années</div>
+        <div class="subtitle">Vue Transposée mobile • Glissez horizontalement pour faire défiler</div>
     </header>
 
-    <!-- Navigation -->
     <div class="tabs">
         <button class="tab-btn active" onclick="openTab('graphiques')">📊 Rendement</button>
         <button class="tab-btn" onclick="openTab('saisie')">✍️ Saisie</button>
         <button class="tab-btn" onclick="openTab('config')">⚙️ Cloud</button>
     </div>
 
-    <!-- ONGLET 1 : GRAPHIQUES & SYNTHÈSE INVERSÉE -->
     <div id="graphiques" class="tab-content active">
         <div class="kpi-container">
             <div class="kpi-card">
@@ -186,18 +192,15 @@
             </div>
         </div>
 
-        <!-- LE TABLEAU INVERSÉ (LIGNES <-> COLONNES) -->
         <div class="card">
             <div class="card-title">📋 Synthèse Chronologique Horizontale</div>
             <div class="table-container">
                 <table id="summaryTable" class="transposed-table">
-                    <!-- Généré dynamiquement en JS -->
-                </table>
+                    </table>
             </div>
         </div>
     </div>
 
-    <!-- ONGLET 2 : SAISIE -->
     <div id="saisie" class="tab-content">
         <div class="grid-2">
             <div class="card">
@@ -246,7 +249,6 @@
         </div>
     </div>
 
-    <!-- ONGLET 3 : CONFIGURATION & BACKUP CLOUD -->
     <div id="config" class="tab-content">
         <div class="grid-2">
             <div class="card">
@@ -449,11 +451,10 @@
             indexProjection++;
         }
 
-        // --- CONSTRUCTION DU TABLEAU TRANSPOSÉ VIA JAVASCRIPT ---
+        // --- CONSTRUCTEUR DU TABLEAU TRANSPOSÉ ---
         const table = document.getElementById('summaryTable');
         table.innerHTML = '';
 
-        // Définition des 9 lignes structurelles de notre tableau inversé
         const labelsLignes = [
             { id: 'date', label: 'Période' },
             { id: 'detail', label: 'Statut' },
@@ -466,33 +467,19 @@
             { id: 'resteDu', label: 'Reste dû' }
         ];
 
-        let currentCumul = 0;
-
-        // Créer chaque ligne une par une
         labelsLignes.forEach((ligneSpecs, indexLigne) => {
             const tr = document.createElement('tr');
             if (indexLigne === 0) tr.classList.add('years-header');
 
-            // Cellule d'en-tête de ligne (colonne 1 fixe à gauche)
             const tdHeader = document.createElement('td');
             tdHeader.classList.add('row-header');
             tdHeader.innerText = ligneSpecs.label;
             tr.appendChild(tdHeader);
 
-            // Reset du cumul pour la ligne "Reste dû" pour le recalculer au fil des colonnes
-            let currentCumulPourLigne = 0;
-
-            // Ajouter une cellule pour chaque année présente dans fullDashboardData (les colonnes)
             fullDashboardData.forEach(colData => {
                 const td = document.createElement('td');
                 if (!colData.isReal) td.classList.add('proj-col');
 
-                // Calculs à la volée du cumul pour les lignes financières
-                if (ligneSpecs.id === 'gainsAnnuels' || ligneSpecs.id === 'resteDu') {
-                    // Pour le rendu synchrone, on calcule la valeur correspondante
-                }
-
-                // Injection de la bonne donnée selon la ligne
                 switch (ligneSpecs.id) {
                     case 'date':
                         td.innerHTML = `<b>${colData.date}</b>`;
@@ -521,7 +508,6 @@
                         td.style.fontWeight = '600';
                         break;
                     case 'resteDu':
-                        // Refaire le cumul des colonnes précédentes jusqu'à celle-ci
                         let cumulJusquIci = fullDashboardData
                             .slice(0, fullDashboardData.indexOf(colData) + 1)
                             .reduce((sum, r) => sum + r.gainsAnnuels, 0);
@@ -540,7 +526,7 @@
             table.appendChild(tr);
         });
 
-        // --- GRAPHISME DES COURBES Chart.js ---
+        // --- COURBES CHART.JS ---
         if(roiChartInstance) roiChartInstance.destroy();
         if(breakdownChartInstance) breakdownChartInstance.destroy();
 
