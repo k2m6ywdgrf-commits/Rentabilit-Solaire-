@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Suivi Solaire - Liquid Glass Dark Ultra-Simplifié</title>
+    <title>Suivi Solaire - Liquid Glass Cloud Backup</title>
     <!-- Chart.js pour les graphiques -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
@@ -15,6 +15,7 @@
             --text-muted: #94a3b8;
             --text-projected: #64748b; /* Gris clair tamisé pour les projections */
             --danger: #ff453a; /* Rouge iOS */
+            --warning: #ff9f0a; /* Orange iOS */
             
             /* Variables Liquid Glass */
             --glass-bg: linear-gradient(135deg, rgba(255, 255, 255, 0.12) 0%, rgba(255, 255, 255, 0.03) 100%);
@@ -68,7 +69,7 @@
         input:focus { outline: none; border-color: var(--secondary); box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3); }
         .help-text { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
         
-        /* Bouton Liquid Glass */
+        /* Boutons Liquid Glass */
         button.btn { 
             padding: 14px; 
             background: linear-gradient(180deg, rgba(59, 130, 246, 0.8) 0%, rgba(29, 78, 216, 0.8) 100%); 
@@ -123,14 +124,14 @@
 <div class="container">
     <header>
         <h1>☀️ Tableau de Bord Solaire</h1>
-        <div class="subtitle">Interface Liquid Glass iPhone • Automatisation Maximale</div>
+        <div class="subtitle">Liquid Glass iPhone • Cloud & Backup Fichiers sécurisé</div>
     </header>
 
     <!-- Navigation -->
     <div class="tabs">
         <button class="tab-btn active" onclick="openTab('graphiques')">📊 Rendement</button>
         <button class="tab-btn" onclick="openTab('saisie')">✍️ Saisie Rapide</button>
-        <button class="tab-btn" onclick="openTab('config')">⚙️ Variables</button>
+        <button class="tab-btn" onclick="openTab('config')">⚙️ Variables & Cloud</button>
     </div>
 
     <!-- ONGLET 1 : GRAPHIQUES -->
@@ -188,18 +189,18 @@
         </div>
     </div>
 
-    <!-- ONGLET 2 : SAISIE (Champs automatisés) -->
+    <!-- ONGLET 2 : SAISIE -->
     <div id="saisie" class="tab-content">
         <div class="grid-2">
             <div class="card">
                 <div class="card-title">➕ Ajouter la Prochaine Période</div>
                 <form id="dataForm" onsubmit="saveRow(event)">
                     <div class="form-group">
-                        <label>Prochaine Période (Générée automatiquement)</label>
+                        <label>Prochaine Période (Auto)</label>
                         <div id="auto-date-badge" class="auto-badge">...</div>
                     </div>
                     <div class="form-group">
-                        <label>Désignation (Générée automatiquement)</label>
+                        <label>Désignation (Auto)</label>
                         <div id="auto-detail-badge" class="auto-badge">...</div>
                     </div>
                     <div class="form-group">
@@ -239,22 +240,47 @@
         </div>
     </div>
 
-    <!-- ONGLET 3 : VARIABLES DE BASE -->
+    <!-- ONGLET 3 : CONFIGURATION & BACKUP CLOUD -->
     <div id="config" class="tab-content">
-        <div class="card" style="max-width: 500px;">
-            <div class="card-title">⚙️ Paramètres Initiaux</div>
-            <div class="form-group">
-                <label>Coût du système de panneaux (€)</label>
-                <input type="number" step="0.01" id="config-invest" value="14430.00">
+        <div class="grid-2">
+            <!-- Sauvegarde iCloud / iPhone Fichiers -->
+            <div class="card">
+                <div class="card-title">💾 Sauvegarde iPhone & iCloud Drive</div>
+                <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 16px;">
+                    Pour sécuriser vos données à long terme, enregistrez une copie dans votre application <b>Fichiers</b> (iCloud Drive). Faites-le après chaque nouvelle saisie !
+                </p>
+                
+                <div class="form-group">
+                    <button class="btn" onclick="exportDataToFile()" style="background: linear-gradient(180deg, #0a84ff 0%, #0056b3 100%); border-color: rgba(10,132,255,0.4); box-shadow: 0 4px 12px rgba(10,132,255,0.3);">
+                        💾 Enregistrer la sauvegarde sur iCloud / iPhone
+                    </button>
+                </div>
+                
+                <div class="form-group" style="margin-top: 24px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 16px;">
+                    <label>🔄 Restaurer l'historique sur un nouvel appareil</label>
+                    <input type="file" id="importFile" accept=".json" onchange="importDataFromFile(event)" style="display: none;">
+                    <button class="btn" onclick="document.getElementById('importFile').click()" style="background: linear-gradient(180deg, #bf5af2 0%, #892cbc 100%); border-color: rgba(191,90,242,0.4); box-shadow: 0 4px 12px rgba(191,90,242,0.3);">
+                        🔄 Restaurer / Charger une ancienne sauvegarde
+                    </button>
+                </div>
             </div>
-            <div class="form-group">
-                <label>Consommation historique de base (kWh)</label>
-                <input type="number" id="config-ref-kwh" value="10225">
-                <div class="help-text">Baseline de comparaison pour déduire les économies générées (ex: juin-23).</div>
+
+            <!-- Configuration des variables -->
+            <div class="card">
+                <div class="card-title">⚙️ Paramètres Initiaux</div>
+                <div class="form-group">
+                    <label>Coût du système de panneaux (€)</label>
+                    <input type="number" step="0.01" id="config-invest" value="14430.00">
+                </div>
+                <div class="form-group">
+                    <label>Consommation historique de base (kWh)</label>
+                    <input type="number" id="config-ref-kwh" value="10225">
+                    <div class="help-text">Baseline de comparaison pour déduire les économies générées (ex: juin-23).</div>
+                </div>
+                <button class="btn" onclick="saveConfig()" style="background: linear-gradient(180deg, #30d158 0%, #1c9a3b 100%); box-shadow: 0 4px 15px rgba(48,209,88,0.2);">Appliquer les configurations</button>
+                <hr style="margin: 24px 0; border: none; border-top: 1px solid rgba(255,255,255,0.1);">
+                <button class="btn" onclick="resetToDefault()" style="background: linear-gradient(180deg, #64748b 0%, #475569 100%); box-shadow: none;">Réinitialiser les données d'origine</button>
             </div>
-            <button class="btn" onclick="saveConfig()" style="background: linear-gradient(180deg, #30d158 0%, #1c9a3b 100%); box-shadow: 0 4px 15px rgba(48,209,88,0.2);">Appliquer les configurations</button>
-            <hr style="margin: 24px 0; border: none; border-top: 1px solid rgba(255,255,255,0.1);">
-            <button class="btn" onclick="resetToDefault()" style="background: linear-gradient(180deg, #64748b 0%, #475569 100%); box-shadow: none;">Réinitialiser les données d'origine</button>
         </div>
     </div>
 </div>
@@ -266,9 +292,9 @@
         { date: "juin-25", detail: "Année 2", facture: 1869.64, kwh: 7375, revente: 1082.70 }
     ];
 
-    let appData = JSON.parse(localStorage.getItem('solar_data_dark_v2')) || defaultData;
-    let appInvest = parseFloat(localStorage.getItem('solar_invest_dark_v2')) || 14430.00;
-    let refKwh = parseInt(localStorage.getItem('solar_ref_kwh_dark_v2')) || 10225;
+    let appData = JSON.parse(localStorage.getItem('solar_data_cloud_v1')) || defaultData;
+    let appInvest = parseFloat(localStorage.getItem('solar_invest_cloud_v1')) || 14430.00;
+    let refKwh = parseInt(localStorage.getItem('solar_ref_kwh_cloud_v1')) || 10225;
 
     let roiChartInstance = null;
     let breakdownChartInstance = null;
@@ -282,28 +308,16 @@
         if(tabId === 'saisie') updateAutoFields();
     }
 
-    // Calcule automatiquement la prochaine date et désignation par rapport au dernier élément réel
     function getNextPeriodSpecs() {
         if (appData.length === 0) {
             return { date: "juin-23", detail: "Année de référence" };
         }
-        
         let lastRow = appData[appData.length - 1];
         let parts = lastRow.date.split('-');
         let nextYearNum = 24;
-        
-        if (parts.length > 1) {
-            nextYearNum = parseInt(parts[1]) + 1;
-        }
-
-        // Tente de trouver le numéro de l'année à incrémenter
+        if (parts.length > 1) { nextYearNum = parseInt(parts[1]) + 1; }
         let nextYearCount = appData.length; 
-        let nextDetail = `Année ${nextYearCount}`;
-        
-        return {
-            date: `juin-${nextYearNum}`,
-            detail: nextDetail
-        };
+        return { date: `juin-${nextYearNum}`, detail: `Année ${nextYearCount}` };
     }
 
     function updateAutoFields() {
@@ -315,10 +329,15 @@
     function saveConfig() {
         appInvest = parseFloat(document.getElementById('config-invest').value) || 0;
         refKwh = parseInt(document.getElementById('config-ref-kwh').value) || 10225;
-        localStorage.setItem('solar_invest_dark_v2', appInvest);
-        localStorage.setItem('solar_ref_kwh_dark_v2', refKwh);
+        saveAllToLocalStorage();
         alert("Paramètres enregistrés !");
         calculateAndRender();
+    }
+
+    function saveAllToLocalStorage() {
+        localStorage.setItem('solar_data_cloud_v1', JSON.stringify(appData));
+        localStorage.setItem('solar_invest_cloud_v1', appInvest);
+        localStorage.setItem('solar_ref_kwh_cloud_v1', refKwh);
     }
 
     function resetToDefault() {
@@ -337,33 +356,77 @@
 
     function saveRow(e) {
         e.preventDefault();
-        
-        // Récupération automatique de la période/désignation
         const specs = getNextPeriodSpecs();
         const facture = parseFloat(document.getElementById('form-facture').value) || 0;
         const kwh = parseInt(document.getElementById('form-kwh').value) || 0;
         const revente = parseFloat(document.getElementById('form-revente').value) || 0;
 
         const newRow = { date: specs.date, detail: specs.detail, facture, kwh, revente };
-        
-        // Empêche les doublons accidentels
         appData = appData.filter(r => r.date !== newRow.date);
         appData.push(newRow);
 
-        localStorage.setItem('solar_data_dark_v2', JSON.stringify(appData));
+        saveAllToLocalStorage();
         document.getElementById('dataForm').reset();
         initSaisieTab();
         updateAutoFields();
-        alert(`Période ${specs.date} enregistrée avec succès !`);
+        alert(`Période ${specs.date} enregistrée localement ! Pensez à l'enregistrer sur iCloud depuis le 3ème onglet.`);
     }
 
     function deleteRow(date) {
-        if(confirm(`Supprimer la ligne du ${date} ? (Attention, cela décalera la prochaine création automatique)`)) {
+        if(confirm(`Supprimer la ligne du ${date} ?`)) {
             appData = appData.filter(r => r.date !== date);
-            localStorage.setItem('solar_data_dark_v2', JSON.stringify(appData));
+            saveAllToLocalStorage();
             initSaisieTab();
             updateAutoFields();
         }
+    }
+
+    function exportDataToFile() {
+        const packageData = {
+            version: "1.0",
+            exportDate: new Date().toISOString(),
+            appInvest: appInvest,
+            refKwh: refKwh,
+            appData: appData
+        };
+
+        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(packageData, null, 2));
+        const downloadAnchor = document.createElement('a');
+        downloadAnchor.setAttribute("href", dataStr);
+        downloadAnchor.setAttribute("download", "sauvegarde-suivi-solaire.json");
+        document.body.appendChild(downloadAnchor);
+        downloadAnchor.click();
+        downloadAnchor.remove();
+    }
+
+    function importDataFromFile(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            try {
+                const parsed = JSON.parse(e.target.result);
+                if (parsed.appData && parsed.appInvest && parsed.refKwh) {
+                    if (confirm("Fichier de sauvegarde valide détecté. Remplacer les données actuelles de l'iPhone par cette sauvegarde ?")) {
+                        appData = parsed.appData;
+                        appInvest = parsed.appInvest;
+                        refKwh = parsed.refKwh;
+                        
+                        saveAllToLocalStorage();
+                        initSaisieTab();
+                        calculateAndRender();
+                        updateAutoFields();
+                        alert("Restauration complète effectuée avec succès !");
+                    }
+                } else {
+                    alert("Ce fichier ne provient pas de l'application de suivi solaire.");
+                }
+            } catch (err) {
+                alert("Erreur lors de la lecture du fichier.");
+            }
+        };
+        reader.readAsText(file);
     }
 
     function processRowCalculations(row, isReferencePeriod) {
@@ -473,7 +536,6 @@
             tbody.appendChild(tr);
         });
 
-        // Config graphique en mode sombre
         const labels = fullDashboardData.map(d => d.date);
         if(roiChartInstance) roiChartInstance.destroy();
         if(breakdownChartInstance) breakdownChartInstance.destroy();
@@ -506,10 +568,8 @@
         });
     }
 
-    // Démarrage
     initSaisieTab();
     calculateAndRender();
-    updateAutoFields();
 </script>
 
 </body>
