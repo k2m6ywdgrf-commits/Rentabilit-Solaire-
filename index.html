@@ -101,25 +101,24 @@
             letter-spacing: 1px;
         }
 
+        /* CORRECTION : Alignement vertical pour éviter la sortie d'écran sur iPhone */
         .row {
             display: flex;
-            gap: 10px;
+            flex-direction: column;
+            gap: 6px;
             margin-bottom: 14px;
-            align-items: center;
-            flex-direction: row;
             text-align: left;
         }
 
         .row label {
-            width: 120px;
-            min-width: 120px;
+            width: 100%;
             font-size: 13px;
             color: var(--text-muted);
             font-weight: 500;
         }
 
         .row input {
-            flex: 1;
+            width: 100%;
             padding: 12px;
             background-color: rgba(30, 41, 59, 0.7);
             border: 1px solid rgba(255, 255, 255, 0.05);
@@ -342,7 +341,7 @@
 
         <div id="saisie" class="tab-content">
             <div class="card">
-                <h2>➕ Ajouter la Prochaine Période</h2>
+                <h2>➕ Ajouter la Période Suivante</h2>
                 <form id="dataForm" onsubmit="saveRow(event)">
                     <div class="sim-row">
                         <span>Prochaine Période (Auto)</span>
@@ -474,6 +473,7 @@
         updateAutoFields();
     }
 
+    // Gestion propre des onglets Safari Mobile
     function openTab(event, tabId) {
         document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
         document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
@@ -703,7 +703,6 @@
             table.appendChild(tr);
         });
 
-        // --- CONFLICT SECURITY WRAPPER CHART.JS ---
         if (typeof Chart !== 'undefined') {
             try {
                 if(roiChartInstance) roiChartInstance.destroy();
@@ -770,17 +769,14 @@
                     });
                 }
 
-                // --- TRANSFORMATION PREMIUM DU GRAPHIQUE EN BÂTONS ---
                 const ctxBreakdown = document.getElementById('breakdownChart');
                 if(ctxBreakdown) {
                     const ctxBreakdown2d = ctxBreakdown.getContext('2d');
 
-                    // Dégradé vertical pour les Factures (Évanouissement vers le bas)
                     const barGradFacture = ctxBreakdown2d.createLinearGradient(0, 0, 0, 200);
                     barGradFacture.addColorStop(0, 'rgba(56, 189, 248, 0.65)');
                     barGradFacture.addColorStop(1, 'rgba(56, 189, 248, 0.05)');
 
-                    // Dégradé vertical pour les Gains Économisés
                     const barGradGains = ctxBreakdown2d.createLinearGradient(0, 0, 0, 200);
                     barGradGains.addColorStop(0, 'rgba(74, 222, 128, 0.65)');
                     barGradGains.addColorStop(1, 'rgba(74, 222, 128, 0.05)');
@@ -802,7 +798,6 @@
                                     label: 'Gains Réels',
                                     data: processedRealRows.map(d => d.gainsAnnuels), 
                                     backgroundColor: barGradGains, 
-                                    borderColor: '#47ade80', /* Lueur verte néon */
                                     borderColor: '#4ade80',
                                     borderWidth: 1.5,
                                     borderRadius: 6
