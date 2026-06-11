@@ -1,269 +1,163 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Suivi Solaire - Liquid Glass Edition</title>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <style>
-        :root {
-            --bg-color: #000000;
-            --card-bg: rgba(22, 28, 45, 0.65);
-            --border-color: rgba(255, 255, 255, 0.08);
-            --text-main: #f3f4f6;
-            --text-muted: #94a3b8;
-            --primary-blue: #0ea5e9;
-            --primary-blue-hover: #0284c7;
-            
-            --success: #10b981;
-            --danger: #f43f5e;
-            --warning: #fbbf24;
-            --projected: #64748b;
-        }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>Suivi Solaire - Liquid Glass</title>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Solaire Glass">
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+  :root {
+    --glass-bg: rgba(22, 28, 45, 0.65);
+    --glass-border: 1px solid rgba(255, 255, 255, 0.08);
+    --input-bg: rgba(30, 41, 59, 0.7);
+    --text-main: #f3f4f6;
+    --text-muted: #94a3b8;
+    --neon-blue: #38bdf8;
+    --neon-green: #4ade80;
+    --neon-red: #f43f5e;
+    --neon-orange: #fbbf24;
+    --neon-purple: #a78bfa;
+  }
+  
+  /* --- Comportement Application Native --- */
+  * { 
+    box-sizing: border-box; 
+    margin: 0; 
+    padding: 0; 
+    -webkit-tap-highlight-color: transparent;
+  }
+  
+  body { 
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: radial-gradient(circle at 50% -20%, #1e1b4b 0%, #000000 80%) no-repeat fixed;
+    background-color: #000000;
+    color: var(--text-main);
+    padding: 16px;
+    padding-top: calc(16px + env(safe-area-inset-top));
+    padding-bottom: calc(16px + env(safe-area-inset-bottom));
+    font-size: 14px;
+    line-height: 1.4;
+    -webkit-user-select: none;
+    user-select: none;
+  }
+  
+  input { -webkit-user-select: text; user-select: text; }
 
-        * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
-        
-        body { 
-            background-color: var(--bg-color); 
-            color: var(--text-main); 
-            padding: 16px; 
-            line-height: 1.5; 
-            font-family: '-apple-system', BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-            background-image: radial-gradient(circle at 50% -20%, #1e1b4b 0%, #000000 70%);
-            background-attachment: fixed;
-            font-size: 15px;
-        }
-        
-        .container { max-width: 600px; margin: 0 auto; }
-        
-        header { margin-bottom: 24px; padding-bottom: 4px; text-align: center; }
-        h1 { font-size: 22px; font-weight: 700; color: var(--text-main); letter-spacing: -0.5px; }
-        .subtitle { color: var(--text-muted); font-size: 13px; margin-top: 4px; }
+  .container { max-width: 600px; margin: 0 auto; }
+  
+  header { margin-bottom: 20px; text-align: center; }
+  h1 { font-size: 22px; font-weight: 700; letter-spacing: -0.5px; }
+  .subtitle { color: var(--text-muted); font-size: 12px; margin-top: 4px; }
 
-        /* --- ÉCRAN D'ACCUEIL LIQUID GLASS --- */
-        #welcome-screen {
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            min-height: 80vh;
-        }
-        .welcome-card {
-            width: 100%;
-            text-align: center;
-            padding: 32px 24px;
-        }
-        .welcome-card h2 {
-            margin-bottom: 12px;
-            color: var(--text-main);
-            text-transform: none;
-            font-size: 19px;
-            letter-spacing: 0;
-            font-weight: 700;
-        }
-        .welcome-card p {
-            color: var(--text-muted);
-            font-size: 14px;
-            margin-bottom: 24px;
-        }
-        .secondary-option {
-            margin-top: 30px;
-            text-align: center;
-        }
-        .btn-link {
-            background: none;
-            border: none;
-            color: var(--text-muted);
-            font-size: 13px;
-            text-decoration: underline;
-            cursor: pointer;
-            padding: 8px;
-        }
+  /* --- ACCUEIL --- */
+  #welcome-screen { display: flex; flex-direction: column; justify-content: center; align-items: center; min-height: 75vh; }
+  .welcome-card { width: 100%; text-align: center; padding: 30px 20px; }
+  .welcome-card h2 { margin-bottom: 10px; font-size: 18px; font-weight: 700; }
+  .welcome-card p { color: var(--text-muted); font-size: 13px; margin-bottom: 20px; }
+  .secondary-option { margin-top: 24px; text-align: center; }
+  .btn-link { background: none; border: none; color: var(--text-muted); font-size: 12px; text-decoration: underline; cursor: pointer; padding: 8px; }
 
-        /* --- BLOCS ET COMPOSANTS EFFET VERRE --- */
-        .card {
-            background: var(--card-bg);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            border-radius: 16px;
-            padding: 20px;
-            margin-bottom: 16px;
-            border: 1px solid var(--border-color);
-            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
-        }
+  /* --- ÉLÉMENTS VERRE --- */
+  .card {
+    background: var(--glass-bg);
+    backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+    border-radius: 16px;
+    padding: 16px;
+    margin-bottom: 14px;
+    border: var(--glass-border);
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+  }
 
-        .card h2 {
-            margin: 0 0 14px;
-            font-size: 13px;
-            color: var(--text-muted);
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
+  .card h2 { margin: 0 0 12px; font-size: 11px; color: var(--text-muted); font-weight: 700; text-transform: uppercase; letter-spacing: 1px; }
 
-        /* CORRECTION : Alignement vertical pour éviter la sortie d'écran sur iPhone */
-        .row {
-            display: flex;
-            flex-direction: column;
-            gap: 6px;
-            margin-bottom: 14px;
-            text-align: left;
-        }
+  /* --- SECTION KPI - AJUSTEMENT TEXTE ET FLEX --- */
+  .renta-summary { display: flex; flex-direction: column; gap: 8px; margin-bottom: 14px; }
+  .renta-values { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; }
+  .renta-total { font-size: 24px; font-weight: 700; color: var(--neon-blue); letter-spacing: -1px; }
+  .renta-target { font-size: 12px; color: var(--text-muted); font-weight: 500; }
+  
+  .renta-gauge-bar {
+    position: relative;
+    height: 12px;
+    background: rgba(255, 255, 255, 0.08);
+    border-radius: 6px;
+    overflow: hidden;
+    border: 1px solid rgba(255, 255, 255, 0.04);
+  }
+  .renta-gauge-fill {
+    height: 100%;
+    border-radius: 6px;
+    background: linear-gradient(to right, var(--neon-blue), var(--neon-green));
+    width: 0%;
+    transition: width 0.8s ease-out;
+  }
+  
+  .renta-sub-stats { display: flex; justify-content: space-between; font-size: 12px; color: var(--text-muted); margin-top: 4px; }
+  .renta-reste { color: var(--neon-red); font-weight: 600; }
+  .renta-deadline { color: var(--neon-blue); font-weight: 600; }
 
-        .row label {
-            width: 100%;
-            font-size: 13px;
-            color: var(--text-muted);
-            font-weight: 500;
-        }
+  /* FORMULAIRE & SAISIE */
+  .row { display: flex; flex-direction: column; gap: 4px; margin-bottom: 12px; text-align: left; }
+  .row label { font-size: 12px; color: var(--text-muted); font-weight: 500; }
+  .row input {
+    width: 100%; padding: 10px 12px; background-color: var(--input-bg);
+    border: 1px solid rgba(255, 255, 255, 0.05); border-radius: 10px;
+    font-size: 14px; color: #ffffff; outline: none; transition: all 0.2s;
+  }
+  .row input:focus { border-color: var(--neon-blue); background-color: rgba(30, 41, 59, 0.9); }
 
-        .row input {
-            width: 100%;
-            padding: 12px;
-            background-color: rgba(30, 41, 59, 0.7);
-            border: 1px solid rgba(255, 255, 255, 0.05);
-            border-radius: 10px;
-            font-size: 15px;
-            color: #ffffff;
-            outline: none;
-            transition: all 0.2s;
-        }
-        .row input:focus {
-            border-color: var(--primary-blue);
-            background-color: rgba(30, 41, 59, 0.9);
-        }
+  .sim-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid rgba(255, 255, 255, 0.05); font-size: 13px; }
+  .sim-row span { color: var(--text-muted); }
+  .sim-row strong { font-weight: 600; color: var(--text-main); }
+  .divider { border: none; border-top: 1px solid rgba(255, 255, 255, 0.08); margin: 12px 0; }
 
-        .sim-row {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 10px 0;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-            font-size: 13px;
-        }
+  /* BOUTONS */
+  button { width: 100%; padding: 12px; border: none; border-radius: 12px; font-weight: 600; font-size: 14px; cursor: pointer; transition: transform 0.1s, opacity 0.2s; }
+  button:active { transform: scale(0.98); opacity: 0.9; }
+  .btn-blue { background: linear-gradient(135deg, var(--neon-blue), #0284c7); color: #ffffff; }
+  .btn-gray { background: rgba(255, 255, 255, 0.08); color: var(--text-main); font-size: 12px; padding: 8px; }
 
-        .sim-row span {
-            color: var(--text-muted);
-        }
+  /* NAV TABS */
+  .tabs { display: flex; gap: 4px; margin-bottom: 14px; background: rgba(255, 255, 255, 0.04); padding: 4px; border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.02); }
+  .tab-btn { flex: 1; padding: 8px 2px; border: none; background: transparent; color: var(--text-muted); font-weight: 500; font-size: 12px; border-radius: 8px; cursor: pointer; transition: all 0.2s; }
+  .tab-btn.active { background: rgba(255, 255, 255, 0.12); color: #fff; font-weight: 600; backdrop-filter: blur(5px); -webkit-backdrop-filter: blur(5px); }
+  
+  #main-application { display: none; }
+  .tab-content { display: none; }
+  .tab-content.active { display: block; }
 
-        .sim-row strong {
-            font-weight: 600;
-            color: var(--text-main);
-        }
+  /* TABLES COMPACTES */
+  .badge { display: inline-block; padding: 2px 6px; border-radius: 4px; font-size: 9px; font-weight: 700; text-transform: uppercase; }
+  .badge.real { background: rgba(74, 222, 128, 0.15); color: var(--neon-green); }
+  .badge.proj { background: rgba(255, 255, 255, 0.08); color: #e2e8f0; border: 1px solid rgba(255, 255, 255, 0.05); }
+  .proj-col { color: var(--text-muted) !important; font-style: italic; }
 
-        .divider {
-            border: none;
-            border-top: 1px solid rgba(255, 255, 255, 0.08);
-            margin: 14px 0;
-        }
+  .table-container { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; border-radius: 12px; }
+  table.transposed-table { width: max-content; min-width: 100%; border-collapse: collapse; font-size: 11px; }
+  
+  table.transposed-table td.row-header { 
+    background-color: #0b0f19 !important;
+    color: var(--text-muted); 
+    font-weight: 600; 
+    position: sticky; 
+    left: 0; 
+    z-index: 10; 
+    width: 105px;
+    min-width: 105px;
+    border-right: 1.5px solid rgba(255, 255, 255, 0.1); 
+    text-align: left;
+    padding-left: 6px;
+  }
 
-        /* Boutons Style Bourse */
-        button {
-            width: 100%;
-            padding: 14px;
-            border: none;
-            border-radius: 12px;
-            font-weight: 600;
-            font-size: 15px;
-            cursor: pointer;
-            transition: transform 0.1s, opacity 0.2s;
-        }
-        button:active { transform: scale(0.97); opacity: 0.9; }
+  table.transposed-table td, table.transposed-table th { padding: 6px 8px; border-bottom: 1px solid rgba(255, 255, 255, 0.04); border-right: 1px solid rgba(255, 255, 255, 0.01); text-align: center; }
+  table.transposed-table tr.years-header th { background: rgba(0, 0, 0, 0.3); color: #fff; font-weight: 700; }
+  table.transposed-table tr.years-header td.row-header { background-color: #0b0f19 !important; color: #fff; }
 
-        .btn-blue {
-            background: linear-gradient(135deg, #0ea5e9, #0284c7);
-            color: #ffffff;
-        }
-        .btn-gray {
-            background: rgba(255, 255, 255, 0.08);
-            color: var(--text-main);
-            font-size: 13px;
-            padding: 10px;
-        }
-
-        /* Système d'Onglets Épuré */
-        .tabs { 
-            display: flex; 
-            gap: 4px; 
-            margin-bottom: 18px; 
-            background: rgba(255, 255, 255, 0.04); 
-            padding: 4px; 
-            border-radius: 12px; 
-            border: 1px solid rgba(255, 255, 255, 0.02); 
-        }
-        .tab-btn { 
-            flex: 1; 
-            padding: 10px 2px; 
-            border: none; 
-            background: transparent; 
-            color: var(--text-muted); 
-            font-weight: 500; 
-            font-size: 13px; 
-            border-radius: 8px; 
-            cursor: pointer; 
-            transition: all 0.2s;
-        }
-        .tab-btn.active { 
-            background: rgba(255, 255, 255, 0.12); 
-            color: #fff; 
-            font-weight: 600;
-            backdrop-filter: blur(5px);
-            -webkit-backdrop-filter: blur(5px);
-        }
-        
-        #main-application { display: none; }
-        .tab-content { display: none; }
-        .tab-content.active { display: block; }
-
-        /* KPI / Stat Boxes en Grille */
-        .kpi-container { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 14px; }
-        .kpi-card { 
-            background: rgba(255, 255, 255, 0.02); 
-            border: 1px solid rgba(255, 255, 255, 0.02); 
-            padding: 14px; 
-            border-radius: 12px; 
-            text-align: center;
-        }
-        .kpi-label { font-size: 11px; color: var(--text-muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
-        .kpi-value { font-size: 18px; font-weight: 700; margin-top: 4px; letter-spacing: -0.5px; }
-
-        /* Badges Sémantiques */
-        .badge { 
-            display: inline-block; 
-            padding: 4px 8px; 
-            border-radius: 6px; 
-            font-size: 11px; 
-            font-weight: 700; 
-            text-transform: uppercase; 
-        }
-        .badge.real { background: rgba(16, 185, 129, 0.15); color: var(--success); }
-        .badge.proj { background: rgba(255, 255, 255, 0.08); color: #e2e8f0; border: 1px solid rgba(255, 255, 255, 0.05); }
-        .proj-col { color: var(--text-muted) !important; font-style: italic; }
-
-        /* --- TABLEAU SYNTHÈSE HORIZONTAL --- */
-        .table-container { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; border-radius: 12px; }
-        table.transposed-table { width: max-content; min-width: 100%; border-collapse: collapse; font-size: 13px; }
-        
-        table.transposed-table td.row-header { 
-            background-color: #0d121f !important; /* Masque le défilement arrière */
-            color: var(--text-muted); 
-            font-weight: 600; 
-            position: sticky; 
-            left: 0; 
-            z-index: 10; 
-            width: 125px;
-            min-width: 125px;
-            border-right: 2px solid rgba(255, 255, 255, 0.1); 
-            text-align: left;
-            padding-left: 8px;
-        }
-
-        table.transposed-table td, table.transposed-table th { padding: 10px 12px; border-bottom: 1px solid rgba(255, 255, 255, 0.05); border-right: 1px solid rgba(255, 255, 255, 0.02); text-align: center; }
-        table.transposed-table tr.years-header th { background: rgba(0, 0, 0, 0.3); color: #fff; font-weight: 700; font-size: 13px; }
-        table.transposed-table tr.years-header td.row-header { background-color: #0d121f !important; color: #fff; }
-
-        .btn-danger-item { background: transparent; color: var(--danger); width: auto; padding: 6px 10px; font-size: 12px; border-radius: 6px; border: 1px solid rgba(244,63,94,0.2); font-weight: 500; }
-    </style>
+  .btn-danger-item { background: transparent; color: var(--neon-red); width: auto; padding: 4px 8px; font-size: 11px; border-radius: 6px; border: 1px solid rgba(244,63,94,0.2); font-weight: 500; }
+</style>
 </head>
 <body>
 
@@ -272,8 +166,7 @@
     <div id="welcome-screen">
         <div class="card welcome-card">
             <h2>Suivi Énergie Solaire</h2>
-            <p>Choisissez votre mode d'accès pour charger vos tableaux de bord.</p>
-            
+            <p>Chargez votre fichier pour actualiser vos graphiques de rentabilité.</p>
             <div class="row" style="margin-top: 10px; display: block;">
                 <input type="file" id="welcomeImportFile" accept=".json" onchange="importFromWelcome(event)" style="display: none;">
                 <button class="btn-blue" onclick="document.getElementById('welcomeImportFile').click()">
@@ -281,58 +174,55 @@
                 </button>
             </div>
         </div>
-
         <div class="secondary-option">
             <button class="btn-link" onclick="bypassToLocalData()">
-                Standard : Utiliser les données locales de l'iPhone ➔
+                Standard : Utiliser les données de l'iPhone ➔
             </button>
         </div>
     </div>
 
     <div id="main-application">
         <header>
-            <h1>☀️ Tableau de Bord Solaire</h1>
-            <div class="subtitle">Glissez le tableau vers la gauche pour faire défiler les années</div>
+            <h1>☀️ Amortissement Solaire</h1>
+            <div class="subtitle">Glissez horizontalement pour parcourir les années</div>
         </header>
 
         <div class="tabs">
             <button class="tab-btn active" onclick="openTab(event, 'graphiques')">📊 Rendement</button>
             <button class="tab-btn" onclick="openTab(event, 'saisie')">✍️ Saisie</button>
-            <button class="tab-btn" onclick="openTab(event, 'config')">⚙️ iCloud</button>
+            <button class="tab-btn" onclick="openTab(event, 'config')">⚙️ Paramètres</button>
         </div>
 
         <div id="graphiques" class="tab-content active">
-            <div class="kpi-container">
-                <div class="kpi-card">
-                    <div class="kpi-label">Investi</div>
-                    <div class="kpi-value" id="kpi-invest" style="color: var(--warning);">0 €</div>
-                </div>
-                <div class="kpi-card">
-                    <div class="kpi-label">Gains Réels</div>
-                    <div class="kpi-value" id="kpi-gains" style="color: var(--success);">0 €</div>
-                </div>
-                <div class="kpi-card">
-                    <div class="kpi-label">Reste dû</div>
-                    <div class="kpi-value" id="kpi-rest" style="color: var(--danger);">0 €</div>
-                </div>
-                <div class="kpi-card">
-                    <div class="kpi-label">Amorti</div>
-                    <div class="kpi-value" id="kpi-years" style="color: var(--primary-blue);">...</div>
+            <div class="card rents-summary-card">
+                <h2>Bilan d'Amortissement Global</h2>
+                <div class="renta-summary">
+                    <div class="renta-values">
+                        <div class="renta-total" id="kpi-gains">0 €</div>
+                        <div class="renta-target" id="kpi-invest">Valeur de l'investissement : 0 €</div>
+                    </div>
+                    <div class="renta-gauge-bar">
+                        <div class="renta-gauge-fill" id="kpi-gauge"></div>
+                    </div>
+                    <div class="renta-sub-stats">
+                        <div>Reste dû : <strong class="renta-reste" id="kpi-rest">0 €</strong></div>
+                        <div>Point mort estimé : <strong class="renta-deadline" id="kpi-years">...</strong></div>
+                    </div>
                 </div>
             </div>
 
-            <div class="card">
+            <div class="card graphs-card">
                 <h2>📉 Trajectoire du Point Mort</h2>
-                <div style="position: relative; height:200px;"><canvas id="roiChart"></canvas></div>
+                <div style="position: relative; height:180px;"><canvas id="roiChart"></canvas></div>
             </div>
             
-            <div class="card">
-                <h2>⚡ Facture vs Économies réelles</h2>
-                <div style="position: relative; height:200px;"><canvas id="breakdownChart"></canvas></div>
+            <div class="card graphs-card">
+                <h2>⚡ Facture vs Économies Réelles</h2>
+                <div style="position: relative; height:180px;"><canvas id="breakdownChart"></canvas></div>
             </div>
 
-            <div class="card">
-                <h2>📋 Synthèse Chronologique Horizontale</h2>
+            <div class="card summary-card">
+                <h2>📋 Synthèse Évolutive Chronologique (Compacte)</h2>
                 <div class="table-container">
                     <table id="summaryTable" class="transposed-table"></table>
                 </div>
@@ -340,44 +230,44 @@
         </div>
 
         <div id="saisie" class="tab-content">
-            <div class="card">
-                <h2>➕ Ajouter la Période Suivante</h2>
+            <div class="card saisie-card">
+                <h2>➕ Enregistrer une Période</h2>
                 <form id="dataForm" onsubmit="saveRow(event)">
                     <div class="sim-row">
-                        <span>Prochaine Période (Auto)</span>
-                        <strong id="auto-date-badge">...</strong>
+                        <span>Période à ajouter</span>
+                        <strong id="auto-date-badge" style="color: var(--neon-blue);">...</strong>
                     </div>
                     <div class="sim-row">
-                        <span>Désignation (Auto)</span>
+                        <span>Statut temporel</span>
                         <strong id="auto-detail-badge">...</strong>
                     </div>
                     <hr class="divider">
                     <div class="row">
-                        <label>Montant Facture Élec. TTC (€)</label>
+                        <label>Facture Électricité Annuelle TTC (€)</label>
                         <input type="number" step="0.01" id="form-facture" placeholder="ex: 1850.50" required>
                     </div>
                     <div class="row">
-                        <label>Consommation (kWh)</label>
+                        <label>Volume d'Énergie Consommé (kWh)</label>
                         <input type="number" id="form-kwh" placeholder="ex: 7200" required>
                     </div>
                     <div class="row">
-                        <label>Revente Surplus (€)</label>
+                        <label>Revente Surplus Facturé (€)</label>
                         <input type="number" step="0.01" id="form-revente" placeholder="ex: 1100.00" required>
                     </div>
-                    <button type="submit" class="btn-blue" style="margin-top: 8px;">Valider et Enregistrer l'Année</button>
+                    <button type="submit" class="btn-blue" style="margin-top: 8px;">Enregistrer l'Année</button>
                 </form>
             </div>
 
-            <div class="card">
-                <h2>🗑️ Historique Réel Enregistré</h2>
+            <div class="card history-card">
+                <h2>🗑️ Historique Annuel</h2>
                 <div class="table-container">
-                    <table id="editTable" style="width: 100%; text-align: left; font-size: 13px; border-collapse: collapse;">
+                    <table id="editTable" style="width: 100%; text-align: left; font-size: 12px; border-collapse: collapse;">
                         <thead>
-                            <tr style="color: var(--text-muted); font-size: 11px; text-transform: uppercase; border-bottom: 1px solid rgba(255, 255, 255, 0.05);">
-                                <th style="padding-bottom: 8px;">Période</th>
-                                <th style="padding-bottom: 8px;">Facture</th>
-                                <th style="padding-bottom: 8px;">Gains</th>
-                                <th style="padding-bottom: 8px;">Action</th>
+                            <tr style="color: var(--text-muted); font-size: 10px; text-transform: uppercase; border-bottom: 1px solid rgba(255, 255, 255, 0.05);">
+                                <th style="padding-bottom: 6px;">Période</th>
+                                <th style="padding-bottom: 6px;">Facture</th>
+                                <th style="padding-bottom: 6px;">Gains</th>
+                                <th style="padding-bottom: 6px;">Action</th>
                             </tr>
                         </thead>
                         <tbody></tbody>
@@ -387,27 +277,27 @@
         </div>
 
         <div id="config" class="tab-content">
-            <div class="card">
-                <h2>💾 Sauvegarde iPhone & iCloud</h2>
-                <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 14px;">
-                    Exportez votre fichier pour le placer en lieu sûr dans votre application <b>Fichiers</b> (iCloud Drive).
+            <div class="card config-card">
+                <h2>💾 Sauvegarde iCloud</h2>
+                <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 12px;">
+                    Exportez votre fichier pour le placer dans votre répertoire <b>Fichiers</b> ou iCloud Drive.
                 </p>
                 <button class="btn-blue" onclick="exportDataToFile()">
-                    💾 Télécharger le fichier de sauvegarde
+                    💾 Sauvegarder le fichier JSON
                 </button>
             </div>
 
-            <div class="card">
-                <h2>⚙️ Paramètres Initiaux</h2>
+            <div class="card config-params-card">
+                <h2>⚙️ Paramètres de Base</h2>
                 <div class="row">
-                    <label>Coût du système (€)</label>
+                    <label>Coût d'investissement initial (€)</label>
                     <input type="number" step="0.01" id="config-invest" value="14430.00">
                 </div>
                 <div class="row">
-                    <label>Conso de base (kWh)</label>
+                    <label>Consommation référence de base (kWh)</label>
                     <input type="number" id="config-ref-kwh" value="10225">
                 </div>
-                <button class="btn-blue" onclick="saveConfig()" style="margin-top: 8px;">Appliquer les configurations</button>
+                <button class="btn-blue" onclick="saveConfig()" style="margin-top: 8px;">Appliquer les modifications</button>
                 <hr class="divider">
                 <button class="btn-gray" onclick="resetToDefault()">Réinitialiser d'origine</button>
             </div>
@@ -459,8 +349,8 @@
                     refKwh = parsed.refKwh;
                     saveAllToLocalStorage();
                     launchApplication();
-                } else { alert("Fichier de sauvegarde non valide."); }
-            } catch (err) { alert("Erreur lors de la lecture du fichier JSON."); }
+                } else { alert("Fichier invalide."); }
+            } catch (err) { alert("Erreur lors de la lecture."); }
         };
         reader.readAsText(file);
     }
@@ -473,7 +363,6 @@
         updateAutoFields();
     }
 
-    // Gestion propre des onglets Safari Mobile
     function openTab(event, tabId) {
         document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
         document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
@@ -509,7 +398,7 @@
         appInvest = parseFloat(document.getElementById('config-invest').value) || 0;
         refKwh = parseInt(document.getElementById('config-ref-kwh').value) || 10225;
         saveAllToLocalStorage();
-        alert("Configuration enregistrée !");
+        alert("Configuration mise à jour !");
         calculateAndRender();
     }
 
@@ -520,7 +409,7 @@
     }
 
     function resetToDefault() {
-        if(confirm("Revenir aux valeurs d'origine (suppression locale) ?")) {
+        if(confirm("Réinitialiser les données ?")) {
             safeClear(); appData = [...defaultData]; appInvest = 14430.00; refKwh = 10225;
             document.getElementById('config-invest').value = "14430.00";
             document.getElementById('config-ref-kwh').value = "10225";
@@ -540,7 +429,7 @@
         const newRow = { date: specs.date, detail: specs.detail, facture, kwh, revente };
         appData = appData.filter(r => r.date !== newRow.date); appData.push(newRow);
         saveAllToLocalStorage(); document.getElementById('dataForm').reset();
-        initSaisieTab(); updateAutoFields(); alert(`Année enregistrée avec succès !`);
+        initSaisieTab(); updateAutoFields(); alert(`Données ajoutées !`);
     }
 
     function deleteRow(date) {
@@ -580,14 +469,15 @@
             const processed = processRowCalculations(row, row.date === "juin-23");
             const tr = document.createElement('tr');
             tr.style.borderBottom = "1px solid rgba(255,255,255,0.05)";
-            tr.innerHTML = `<td style="padding: 10px 0;"><b>${processed.date}</b></td><td>${processed.facture.toFixed(0)}€</td><td style="color:var(--success); font-weight:600;">${processed.gainsAnnuels.toFixed(0)}€</td><td><button class="btn-danger-item" onclick="deleteRow('${processed.date}')">Supprimer</button></td>`;
+            tr.innerHTML = `<td style="padding: 8px 0;"><b>${processed.date}</b></td><td>${processed.facture.toFixed(0)}€</td><td style="color:var(--neon-green); font-weight:600;">${processed.gainsAnnuels.toFixed(0)}€</td><td><button class="btn-danger-item" onclick="deleteRow('${processed.date}')">Supprimer</button></td>`;
             tbody.appendChild(tr);
         });
     }
 
     function calculateAndRender() {
+        // AJUSTEMENT : Libellé "Valeur de l'investissement" explicite
         const kpiInv = document.getElementById('kpi-invest');
-        if (kpiInv) kpiInv.innerText = Math.round(appInvest).toLocaleString('fr-FR') + " €";
+        if (kpiInv) kpiInv.innerText = "Valeur de l’investissement : " + Math.round(appInvest).toLocaleString('fr-FR') + " €";
         
         let processedRealRows = appData.map(row => processRowCalculations(row, row.date === "juin-23"));
 
@@ -605,10 +495,14 @@
         const kpiGains = document.getElementById('kpi-gains');
         const kpiRest = document.getElementById('kpi-rest');
         const kpiYears = document.getElementById('kpi-years');
+        const kpiGauge = document.getElementById('kpi-gauge');
         
         if (kpiGains) kpiGains.innerText = Math.round(totalGainsReels).toLocaleString('fr-FR') + " €";
         if (kpiRest) kpiRest.innerText = Math.round(resteAAmortir).toLocaleString('fr-FR') + " €";
         if (kpiYears) kpiYears.innerText = `~${tempsTotalEstime.toFixed(1)} ans`;
+        
+        let pPct = appInvest > 0 ? (totalGainsReels / appInvest) * 100 : 0;
+        if (kpiGauge) kpiGauge.style.width = Math.min(100, pPct) + "%";
 
         let fullDashboardData = processedRealRows.map(r => ({...r, isReal: true}));
         let simulatedRenta = appInvest - totalGainsReels;
@@ -635,12 +529,12 @@
         const labelsLignes = [
             { id: 'date', label: 'Période' },
             { id: 'detail', label: 'Statut' },
-            { id: 'facture', label: 'Facture Elec.' },
-            { id: 'kwh', label: 'Conso (kWh)' },
-            { id: 'tarif', label: 'Tarif / kWh' },
+            { id: 'facture', label: 'Facture' },
+            { id: 'kwh', label: 'Conso kWh' },
+            { id: 'tarif', label: 'Tarif/kWh' },
             { id: 'economies', label: 'Économies' },
             { id: 'revente', label: 'Revente' },
-            { id: 'gainsAnnuels', label: 'Gain Annuel' },
+            { id: 'gainsAnnuels', label: 'Gain An.' },
             { id: 'resteDu', label: 'Reste dû' }
         ];
 
@@ -681,7 +575,7 @@
                         break;
                     case 'gainsAnnuels':
                         td.innerText = `${colData.gainsAnnuels.toFixed(0)} €`;
-                        if (colData.isReal) td.style.color = 'var(--success)';
+                        if (colData.isReal) td.style.color = 'var(--neon-green)';
                         td.style.fontWeight = '600';
                         break;
                     case 'resteDu':
@@ -692,9 +586,9 @@
                         td.innerText = `${resteCap.toFixed(0)} €`;
                         td.style.fontWeight = '600';
                         if (resteCap > 0) {
-                            td.style.color = colData.isReal ? 'var(--danger)' : 'var(--text-muted)';
+                            td.style.color = colData.isReal ? 'var(--neon-red)' : 'var(--text-muted)';
                         } else {
-                            td.style.color = 'var(--success)';
+                            td.style.color = 'var(--neon-green)';
                         }
                         break;
                 }
@@ -710,18 +604,18 @@
 
                 Chart.defaults.color = '#94a3b8';
                 Chart.defaults.borderColor = 'rgba(255, 255, 255, 0.04)';
-                Chart.defaults.plugins.legend.display = false;
 
                 const ctxRoi = document.getElementById('roiChart');
                 if(ctxRoi) {
                     const ctxRoi2d = ctxRoi.getContext('2d');
                     
-                    const lineGradient = ctxRoi2d.createLinearGradient(0, 0, 400, 0);
-                    lineGradient.addColorStop(0, '#38bdf8');
-                    lineGradient.addColorStop(1, '#4ade80');
+                    const lineGradient = ctxRoi2d.createLinearGradient(0, 0, ctxRoi.offsetWidth || 500, 0);
+                    lineGradient.addColorStop(0, '#38bdf8'); 
+                    lineGradient.addColorStop(1, '#4ade80'); 
 
                     const fillGradient = ctxRoi2d.createLinearGradient(0, 0, 0, 180);
-                    fillGradient.addColorStop(0, 'rgba(74, 222, 128, 0.12)');
+                    fillGradient.addColorStop(0, 'rgba(56, 189, 248, 0.15)');
+                    fillGradient.addColorStop(0.5, 'rgba(74, 222, 128, 0.05)');
                     fillGradient.addColorStop(1, 'rgba(11, 15, 25, 0)');
 
                     let cumulTotal = 0;
@@ -733,25 +627,25 @@
                             labels: fullDashboardData.map(d => d.date),
                             datasets: [
                                 { 
-                                    label: 'Valeur Marché',
+                                    label: 'Gains cumulés',
                                     data: seriesGainsCumules, 
                                     borderColor: lineGradient, 
-                                    borderWidth: 3,
+                                    borderWidth: 2.5,
+                                    pointRadius: 4, 
+                                    // AJUSTEMENT : Fond des points calqué sur le dégradé de la ligne
                                     pointBackgroundColor: lineGradient,
                                     pointBorderColor: '#0b0f19',
-                                    pointBorderWidth: 1,
-                                    pointRadius: 4,
-                                    pointHoverRadius: 6,
+                                    pointBorderWidth: 1.5,
                                     backgroundColor: fillGradient, 
                                     fill: true, 
                                     tension: 0 
                                 },
                                 { 
-                                    label: 'Montant Investi',
+                                    label: 'Seuil Investi',
                                     data: Array(fullDashboardData.length).fill(appInvest), 
                                     borderColor: '#475569', 
-                                    borderDash: [5, 5], 
-                                    borderWidth: 1.5,
+                                    borderDash: [4, 4], 
+                                    borderWidth: 1,
                                     pointRadius: 0, 
                                     fill: false,
                                     tension: 0
@@ -761,9 +655,13 @@
                         options: { 
                             responsive: true, 
                             maintainAspectRatio: false,
+                            plugins: { legend: { display: false } },
                             scales: {
                                 x: { grid: { display: false } },
-                                y: { grid: { color: 'rgba(255, 255, 255, 0.03)' } }
+                                y: { 
+                                  grid: { color: 'rgba(255, 255, 255, 0.03)' },
+                                  ticks: { padding: 8 }
+                                }
                             }
                         }
                     });
@@ -773,14 +671,6 @@
                 if(ctxBreakdown) {
                     const ctxBreakdown2d = ctxBreakdown.getContext('2d');
 
-                    const barGradFacture = ctxBreakdown2d.createLinearGradient(0, 0, 0, 200);
-                    barGradFacture.addColorStop(0, 'rgba(56, 189, 248, 0.65)');
-                    barGradFacture.addColorStop(1, 'rgba(56, 189, 248, 0.05)');
-
-                    const barGradGains = ctxBreakdown2d.createLinearGradient(0, 0, 0, 200);
-                    barGradGains.addColorStop(0, 'rgba(74, 222, 128, 0.65)');
-                    barGradGains.addColorStop(1, 'rgba(74, 222, 128, 0.05)');
-
                     breakdownChartInstance = new Chart(ctxBreakdown2d, {
                         type: 'bar',
                         data: {
@@ -789,32 +679,36 @@
                                 { 
                                     label: 'Facture Elec.',
                                     data: processedRealRows.map(d => d.facture), 
-                                    backgroundColor: barGradFacture, 
-                                    borderColor: '#38bdf8',
+                                    backgroundColor: 'rgba(56, 189, 248, 0.4)', 
+                                    borderColor: '#38bdf8', 
                                     borderWidth: 1.5,
-                                    borderRadius: 6
+                                    borderRadius: 4
                                 },
                                 { 
-                                    label: 'Gains Réels',
-                                    data: processedRealRows.map(d => d.gainsAnnuels), 
-                                    backgroundColor: barGradGains, 
-                                    borderColor: '#4ade80',
+                                    label: 'Économies Réelles',
+                                    data: processedRealRows.map(d => d.economies), 
+                                    backgroundColor: 'rgba(74, 222, 128, 0.4)', 
+                                    borderColor: '#4ade80', 
                                     borderWidth: 1.5,
-                                    borderRadius: 6
+                                    borderRadius: 4
                                 }
                             ]
                         },
                         options: { 
                             responsive: true, 
                             maintainAspectRatio: false,
+                            plugins: { legend: { display: false } }, 
                             scales: {
                                 x: { grid: { display: false } },
-                                y: { grid: { color: 'rgba(255, 255, 255, 0.03)' } }
+                                y: { 
+                                  grid: { color: 'rgba(255, 255, 255, 0.03)' },
+                                  ticks: { padding: 8 }
+                                }
                             }
                         }
                     });
                 }
-            } catch(e) { console.error("Erreur d'initialisation des graphiques", e); }
+            } catch(e) { console.error("Erreur chart", e); }
         }
     }
 </script>
