@@ -31,9 +31,14 @@
     -webkit-tap-highlight-color: transparent;
   }
   
-  body { 
+  html {
+    background: radial-gradient(circle at 50% -5%, #1e1b4b 0%, #000000 85%) no-repeat fixed;
+    background-color: #000000;
+  }
+
+  body {
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-    background: radial-gradient(circle at 50% -20%, #1e1b4b 0%, #000000 80%) no-repeat fixed;
+    background: radial-gradient(circle at 50% -5%, #1e1b4b 0%, #000000 85%) no-repeat fixed;
     background-color: #000000;
     color: var(--text-main);
     padding: 16px;
@@ -201,8 +206,6 @@
                             <line x1="20" y1="96" x2="220" y2="96"/>
                         </g>
                         <rect x="20" y="30" width="200" height="100" rx="8" fill="none" stroke="rgba(255,255,255,0.55)" stroke-width="3"/>
-                        <line x1="60" y1="130" x2="45" y2="150" stroke="rgba(255,255,255,0.4)" stroke-width="4" stroke-linecap="round"/>
-                        <line x1="180" y1="130" x2="195" y2="150" stroke="rgba(255,255,255,0.4)" stroke-width="4" stroke-linecap="round"/>
                     </svg>
                 </div>
                 <div class="icon-card-icon">☀️</div>
@@ -210,6 +213,15 @@
                     <h2>Investissement Solaire</h2>
                     <div class="kpi-value" style="color: var(--neon-purple);" id="kpi-invest">0 €</div>
                     <div class="kpi-note">Coût initial de l'installation</div>
+                </div>
+            </div>
+
+            <div class="card card-tint-purple">
+                <h2>🎯 Progression vers le Point Mort</h2>
+                <div class="progress-track"><div class="progress-fill" id="kpi-gauge"></div></div>
+                <div class="progress-scale">
+                    <span>0 €</span>
+                    <span>Estimé : <strong style="color: var(--neon-blue);" id="kpi-years">...</strong></span>
                 </div>
             </div>
 
@@ -229,15 +241,6 @@
                         <div class="kpi-value red" id="kpi-rest">0 €</div>
                         <div class="kpi-note">Sur investissement</div>
                     </div>
-                </div>
-            </div>
-
-            <div class="card card-tint-purple">
-                <h2>🎯 Progression vers le Point Mort</h2>
-                <div class="progress-track"><div class="progress-fill" id="kpi-gauge"></div></div>
-                <div class="progress-scale">
-                    <span>0 €</span>
-                    <span>Estimé : <strong style="color: var(--neon-blue);" id="kpi-years">...</strong></span>
                 </div>
             </div>
 
@@ -265,7 +268,7 @@
                 <div class="icon-card-body">
                     <h2>CO2 Évité (estimation)</h2>
                     <div class="kpi-value teal" id="kpi-co2">0 kg</div>
-                    <div class="kpi-note">Basé sur le kWh économisé et le mix électrique moyen français (~56 g/kWh)</div>
+                    <div class="kpi-note" id="kpi-co2-trees">Basé sur le kWh économisé et le mix électrique moyen français (~56 g/kWh)</div>
                 </div>
             </div>
 
@@ -642,6 +645,7 @@
     }
 
     const CO2_KG_PAR_KWH = 0.056;
+    const CO2_KG_PAR_ARBRE_PAR_AN = 25;
 
     function processRowCalculations(row, isReferencePeriod, aideAmount = 0) {
         const tarif = row.kwh > 0 ? (row.facture / row.kwh) : 0;
@@ -724,9 +728,15 @@
         }
 
         const kpiCo2 = document.getElementById('kpi-co2');
+        const kpiCo2Trees = document.getElementById('kpi-co2-trees');
         if (kpiCo2) {
             const totalKwhEconomises = processedRealRows.reduce((acc, r) => acc + r.kwhEconomises, 0);
-            kpiCo2.innerText = Math.round(totalKwhEconomises * CO2_KG_PAR_KWH).toLocaleString('fr-FR') + " kg";
+            const totalCo2Kg = totalKwhEconomises * CO2_KG_PAR_KWH;
+            kpiCo2.innerText = Math.round(totalCo2Kg).toLocaleString('fr-FR') + " kg";
+            if (kpiCo2Trees) {
+                const arbresEquivalent = Math.round(totalCo2Kg / CO2_KG_PAR_ARBRE_PAR_AN);
+                kpiCo2Trees.innerText = `Équivalent à environ ${arbresEquivalent} arbre${arbresEquivalent > 1 ? 's' : ''} planté${arbresEquivalent > 1 ? 's' : ''} (absorption sur 1 an)`;
+            }
         }
 
         let fullDashboardData = processedRealRows.map(r => ({...r, isReal: true}));
