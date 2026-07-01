@@ -84,7 +84,7 @@
   .kpi-note { font-size: 11px; color: var(--text-muted); margin-top: 6px; }
 
   /* --- CARTES "ICÔNE + CONTENU" (style CO2) --- */
-  .icon-card { display: flex; align-items: center; gap: 12px; }
+  .icon-card { display: flex; align-items: center; justify-content: center; gap: 12px; }
   .icon-card-icon {
     flex-shrink: 0; font-size: 26px; line-height: 1; width: 44px; height: 44px;
     display: flex; align-items: center; justify-content: center;
@@ -93,6 +93,16 @@
   .icon-card-body { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
   .icon-card-body h2 { margin-bottom: 4px; }
   .icon-card.kpi-card .kpi-value { font-size: 21px; }
+
+  /* --- CARTE HÉRO (Investissement Solaire) : texte à gauche, illustration à droite --- */
+  .hero-card { justify-content: flex-start; position: relative; overflow: hidden; }
+  .hero-card .icon-card-icon, .hero-card .icon-card-body { position: relative; z-index: 1; }
+  .solar-panel-art {
+    position: absolute; inset: 0; z-index: 0; pointer-events: none; opacity: 0.8;
+    -webkit-mask-image: linear-gradient(to right, transparent 0%, transparent 48%, black 100%);
+    mask-image: linear-gradient(to right, transparent 0%, transparent 48%, black 100%);
+  }
+  .solar-panel-art svg { position: absolute; right: -8%; top: 50%; width: 62%; height: auto; transform: translateY(-50%) rotate(-6deg); }
 
   .progress-track {
     position: relative; height: 10px; border-radius: 6px; overflow: hidden;
@@ -174,6 +184,27 @@
 
         <div id="graphiques" class="tab-content active">
             <div class="card card-tint-purple icon-card kpi-card hero-card">
+                <div class="solar-panel-art" aria-hidden="true">
+                    <svg viewBox="0 0 240 160" preserveAspectRatio="xMidYMid meet">
+                        <defs>
+                            <linearGradient id="panelGrad" x1="0" y1="0" x2="1" y2="1">
+                                <stop offset="0%" stop-color="#a78bfa"/>
+                                <stop offset="100%" stop-color="#1e3a8a"/>
+                            </linearGradient>
+                        </defs>
+                        <rect x="20" y="30" width="200" height="100" rx="8" fill="url(#panelGrad)"/>
+                        <g stroke="rgba(255,255,255,0.4)" stroke-width="2.5">
+                            <line x1="70" y1="30" x2="70" y2="130"/>
+                            <line x1="120" y1="30" x2="120" y2="130"/>
+                            <line x1="170" y1="30" x2="170" y2="130"/>
+                            <line x1="20" y1="63" x2="220" y2="63"/>
+                            <line x1="20" y1="96" x2="220" y2="96"/>
+                        </g>
+                        <rect x="20" y="30" width="200" height="100" rx="8" fill="none" stroke="rgba(255,255,255,0.55)" stroke-width="3"/>
+                        <line x1="60" y1="130" x2="45" y2="150" stroke="rgba(255,255,255,0.4)" stroke-width="4" stroke-linecap="round"/>
+                        <line x1="180" y1="130" x2="195" y2="150" stroke="rgba(255,255,255,0.4)" stroke-width="4" stroke-linecap="round"/>
+                    </svg>
+                </div>
                 <div class="icon-card-icon">☀️</div>
                 <div class="icon-card-body">
                     <h2>Investissement Solaire</h2>
@@ -259,11 +290,11 @@
         </div>
 
         <div id="saisie" class="tab-content">
-            <div class="card saisie-card">
-                <h2>➕ Enregistrer une Période</h2>
+            <div class="card saisie-card" id="saisie-form-card">
+                <h2 id="saisie-form-title">➕ Enregistrer une Période</h2>
                 <form id="dataForm" onsubmit="saveRow(event)">
                     <div class="sim-row">
-                        <span>Période à ajouter</span>
+                        <span id="auto-date-label">Période à ajouter</span>
                         <strong id="auto-date-badge" style="color: var(--neon-blue);">...</strong>
                     </div>
                     <div class="sim-row">
@@ -283,7 +314,8 @@
                         <label>Revente Surplus Facturé (€)</label>
                         <input type="number" step="0.01" id="form-revente" placeholder="ex: 1100.00" required>
                     </div>
-                    <button type="submit" class="btn-blue" style="margin-top: 8px;">Enregistrer l'Année</button>
+                    <button type="submit" class="btn-blue" id="saisie-submit-btn" style="margin-top: 8px;">Enregistrer l'Année</button>
+                    <button type="button" class="btn-gray" id="saisie-cancel-btn" onclick="cancelEditRow()" style="margin-top: 8px; display: none;">Annuler la modification</button>
                 </form>
             </div>
 
@@ -372,6 +404,7 @@
     let appInvest = 14430.00;
     let refKwh = 10225;
     let oneTimeAids = [];
+    let editingDate = null;
 
     let roiChartInstance = null;
     let breakdownChartInstance = null;
@@ -458,9 +491,45 @@
     }
 
     function updateAutoFields() {
-        const specs = getNextPeriodSpecs();
+        const specs = editingDate
+            ? (appData.find(r => r.date === editingDate) || getNextPeriodSpecs())
+            : getNextPeriodSpecs();
         document.getElementById('auto-date-badge').innerText = specs.date;
         document.getElementById('auto-detail-badge').innerText = specs.detail;
+
+        const formTitle = document.getElementById('saisie-form-title');
+        const dateLabel = document.getElementById('auto-date-label');
+        const submitBtn = document.getElementById('saisie-submit-btn');
+        const cancelBtn = document.getElementById('saisie-cancel-btn');
+        if (editingDate) {
+            if (formTitle) formTitle.innerText = '✏️ Modifier une Période';
+            if (dateLabel) dateLabel.innerText = 'Période en cours de modification';
+            if (submitBtn) submitBtn.innerText = 'Mettre à jour la période';
+            if (cancelBtn) cancelBtn.style.display = 'block';
+        } else {
+            if (formTitle) formTitle.innerText = '➕ Enregistrer une Période';
+            if (dateLabel) dateLabel.innerText = 'Période à ajouter';
+            if (submitBtn) submitBtn.innerText = "Enregistrer l'Année";
+            if (cancelBtn) cancelBtn.style.display = 'none';
+        }
+    }
+
+    function editRow(date) {
+        const row = appData.find(r => r.date === date);
+        if (!row) return;
+        editingDate = date;
+        document.getElementById('form-facture').value = row.facture;
+        document.getElementById('form-kwh').value = row.kwh;
+        document.getElementById('form-revente').value = row.revente;
+        updateAutoFields();
+        const card = document.getElementById('saisie-form-card');
+        if (card) card.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    function cancelEditRow() {
+        editingDate = null;
+        document.getElementById('dataForm').reset();
+        updateAutoFields();
     }
 
     function saveConfig() {
@@ -492,11 +561,22 @@
         const evtTarget = event || window.event;
         if (evtTarget && evtTarget.preventDefault) evtTarget.preventDefault();
 
-        const specs = getNextPeriodSpecs();
         const facture = parseFloat(document.getElementById('form-facture').value) || 0;
         const kwh = parseInt(document.getElementById('form-kwh').value) || 0;
         const revente = parseFloat(document.getElementById('form-revente').value) || 0;
 
+        if (editingDate) {
+            const idx = appData.findIndex(r => r.date === editingDate);
+            const existing = idx >= 0 ? appData[idx] : null;
+            const newRow = { date: editingDate, detail: existing ? existing.detail : editingDate, facture, kwh, revente };
+            if (idx >= 0) { appData[idx] = newRow; } else { appData.push(newRow); }
+            editingDate = null;
+            saveAllToLocalStorage(); document.getElementById('dataForm').reset();
+            initSaisieTab(); updateAutoFields(); populateAidPeriodSelect(); alert(`Période mise à jour !`);
+            return;
+        }
+
+        const specs = getNextPeriodSpecs();
         const newRow = { date: specs.date, detail: specs.detail, facture, kwh, revente };
         appData = appData.filter(r => r.date !== newRow.date); appData.push(newRow);
         saveAllToLocalStorage(); document.getElementById('dataForm').reset();
@@ -506,6 +586,7 @@
     function deleteRow(date) {
         if(confirm(`Supprimer la période ${date} ?`)) {
             appData = appData.filter(r => r.date !== date); saveAllToLocalStorage();
+            if (editingDate === date) { editingDate = null; document.getElementById('dataForm').reset(); }
             initSaisieTab(); updateAutoFields(); populateAidPeriodSelect();
         }
     }
@@ -590,7 +671,7 @@
             const processed = processRowCalculations(row, row.date === "juin-23");
             const tr = document.createElement('tr');
             tr.style.borderBottom = "1px solid rgba(255,255,255,0.05)";
-            tr.innerHTML = `<td style="padding: 8px 0;"><b>${processed.date}</b></td><td>${processed.facture.toFixed(0)}€</td><td style="color:var(--neon-green); font-weight:600;">${processed.gainsAnnuels.toFixed(0)}€</td><td><button class="btn-danger-item" onclick="deleteRow('${processed.date}')">Supprimer</button></td>`;
+            tr.innerHTML = `<td style="padding: 8px 0;"><b>${processed.date}</b></td><td>${processed.facture.toFixed(0)}€</td><td style="color:var(--neon-green); font-weight:600;">${processed.gainsAnnuels.toFixed(0)}€</td><td style="display:flex; gap:6px;"><button class="btn-gray" style="width:auto; padding:4px 8px; font-size:11px;" onclick="editRow('${processed.date}')">✏️</button><button class="btn-danger-item" onclick="deleteRow('${processed.date}')">Supprimer</button></td>`;
             tbody.appendChild(tr);
         });
     }
