@@ -137,36 +137,25 @@
   .tab-content { display: none; }
   .tab-content.active { display: block; }
 
-  /* TABLES COMPACTES */
   .badge { display: inline-block; padding: 2px 6px; border-radius: 4px; font-size: 9px; font-weight: 700; text-transform: uppercase; }
   .badge.real { background: rgba(74, 222, 128, 0.15); color: var(--neon-green); }
   .badge.proj { background: rgba(255, 255, 255, 0.08); color: #e2e8f0; border: 1px solid rgba(255, 255, 255, 0.05); }
-  .proj-col { color: var(--text-muted) !important; font-style: italic; }
-
-  .table-container { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.08); }
-  table.transposed-table { width: max-content; min-width: 100%; border-collapse: collapse; font-size: 12.5px; color: #e5e7eb; }
-
-  table.transposed-table td.row-header {
-    background-color: #0b0f19 !important;
-    color: #cbd5e1;
-    font-weight: 700;
-    position: sticky;
-    left: 0;
-    z-index: 10;
-    width: 105px;
-    min-width: 105px;
-    border-right: 1.5px solid rgba(255, 255, 255, 0.16);
-    text-align: left;
-    padding-left: 8px;
-  }
-
-  table.transposed-table td, table.transposed-table th { padding: 9px 8px; border-bottom: 1px solid rgba(255, 255, 255, 0.09); border-right: 1px solid rgba(255, 255, 255, 0.04); text-align: center; }
-  table.transposed-table tr.years-header th { background: rgba(255, 255, 255, 0.08); color: #fff; font-weight: 700; font-size: 13px; }
-  table.transposed-table tr.years-header td.row-header { background-color: #0b0f19 !important; color: #fff; }
-  table.transposed-table tr:nth-child(even) td:not(.row-header) { background: rgba(255, 255, 255, 0.035); }
-  table.transposed-table tr:hover td:not(.row-header) { background: rgba(56, 189, 248, 0.08); }
 
   .btn-danger-item { background: transparent; color: var(--neon-red); width: auto; padding: 4px 8px; font-size: 11px; border-radius: 6px; border: 1px solid rgba(244,63,94,0.2); font-weight: 500; }
+
+  /* --- COMPARATIF DES GAINS PAR PÉRIODE (liste à barres) --- */
+  .compare-list { display: flex; flex-direction: column; gap: 10px; }
+  .compare-row { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.07); border-radius: 12px; padding: 10px 12px; }
+  .compare-row.proj { border-style: dashed; opacity: 0.75; }
+  .compare-row-top { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+  .compare-date { font-weight: 700; font-size: 13px; width: 58px; flex-shrink: 0; }
+  .compare-gain { margin-left: auto; color: var(--neon-green); font-weight: 700; font-size: 13px; }
+  .compare-bar-track { height: 8px; border-radius: 5px; background: rgba(255,255,255,0.06); overflow: hidden; margin-bottom: 6px; }
+  .compare-bar-fill { height: 100%; border-radius: 5px; background: linear-gradient(to right, #38bdf8, #4ade80); }
+  .compare-row.proj .compare-bar-fill { background: rgba(255,255,255,0.18); }
+  .compare-row-bottom { display: flex; justify-content: space-between; font-size: 10.5px; color: var(--text-muted); }
+  .compare-reste { color: var(--neon-red); font-weight: 600; }
+  .compare-row.proj .compare-reste { color: var(--text-muted); }
 </style>
 </head>
 <body>
@@ -264,11 +253,11 @@
                 <div style="position: relative; height:180px;"><canvas id="breakdownChart"></canvas></div>
             </div>
 
-            <div class="card summary-card">
-                <h2>📋 Synthèse Évolutive Chronologique (Compacte)</h2>
-                <div class="table-container">
-                    <table id="summaryTable" class="transposed-table"></table>
-                </div>
+            <div class="card summary-card card-tint-blue">
+                <h2>📊 Comparatif des Gains par Période</h2>
+                <div style="position: relative; height:140px;"><canvas id="gainCompareChart"></canvas></div>
+                <hr class="divider">
+                <div id="summaryCompare" class="compare-list"></div>
             </div>
         </div>
 
@@ -373,6 +362,7 @@
 
     let roiChartInstance = null;
     let breakdownChartInstance = null;
+    let gainCompareChartInstance = null;
 
     function loadLocalData() {
         const localStoreData = safeGetItem('solar_data_cloud_v1');
@@ -603,85 +593,40 @@
             indexProjection++;
         }
 
-        const table = document.getElementById('summaryTable');
-        if(!table) return;
-        table.innerHTML = '';
+        const compareContainer = document.getElementById('summaryCompare');
+        if(!compareContainer) return;
+        compareContainer.innerHTML = '';
 
-        const labelsLignes = [
-            { id: 'date', label: 'Période' },
-            { id: 'detail', label: 'Statut' },
-            { id: 'facture', label: 'Facture' },
-            { id: 'kwh', label: 'Conso kWh' },
-            { id: 'tarif', label: 'Tarif/kWh' },
-            { id: 'economies', label: 'Économies' },
-            { id: 'revente', label: 'Revente' },
-            { id: 'gainsAnnuels', label: 'Gain An.' },
-            { id: 'resteDu', label: 'Reste dû' }
-        ];
+        const maxGain = Math.max(...fullDashboardData.map(r => r.gainsAnnuels), 1);
+        let cumulRunning = 0;
+        fullDashboardData.forEach(colData => {
+            cumulRunning += colData.gainsAnnuels;
+            const resteCap = Math.max(0, appInvest - cumulRunning);
+            const pct = Math.max(4, (colData.gainsAnnuels / maxGain) * 100);
 
-        labelsLignes.forEach((ligneSpecs, indexLigne) => {
-            const tr = document.createElement('tr');
-            if (indexLigne === 0) tr.classList.add('years-header');
-
-            const tdHeader = document.createElement('td');
-            tdHeader.classList.add('row-header');
-            tdHeader.innerText = ligneSpecs.label;
-            tr.appendChild(tdHeader);
-
-            fullDashboardData.forEach(colData => {
-                const td = document.createElement('td');
-                if (!colData.isReal) td.classList.add('proj-col');
-
-                switch (ligneSpecs.id) {
-                    case 'date':
-                        td.innerHTML = `<b>${colData.date}</b>`;
-                        break;
-                    case 'detail':
-                        td.innerHTML = `<span class="badge ${colData.isReal ? 'real' : 'proj'}">${colData.detail}</span>`;
-                        break;
-                    case 'facture':
-                        td.innerText = `${colData.facture.toFixed(0)} €`;
-                        break;
-                    case 'kwh':
-                        td.innerText = `${colData.kwh}`;
-                        break;
-                    case 'tarif':
-                        td.innerText = `${colData.tarif.toFixed(2)} €`;
-                        break;
-                    case 'economies':
-                        td.innerText = colData.economies > 0 ? `${colData.economies.toFixed(0)} €` : '-';
-                        break;
-                    case 'revente':
-                        td.innerText = colData.revente > 0 ? `${colData.revente.toFixed(0)} €` : '-';
-                        break;
-                    case 'gainsAnnuels':
-                        td.innerText = `${colData.gainsAnnuels.toFixed(0)} €`;
-                        if (colData.isReal) td.style.color = 'var(--neon-green)';
-                        td.style.fontWeight = '600';
-                        break;
-                    case 'resteDu':
-                        let cumulJusquIci = fullDashboardData
-                            .slice(0, fullDashboardData.indexOf(colData) + 1)
-                            .reduce((sum, r) => sum + r.gainsAnnuels, 0);
-                        let resteCap = Math.max(0, appInvest - cumulJusquIci);
-                        td.innerText = `${resteCap.toFixed(0)} €`;
-                        td.style.fontWeight = '600';
-                        if (resteCap > 0) {
-                            td.style.color = colData.isReal ? 'var(--neon-red)' : 'var(--text-muted)';
-                        } else {
-                            td.style.color = 'var(--neon-green)';
-                        }
-                        break;
-                }
-                tr.appendChild(td);
-            });
-            table.appendChild(tr);
+            const row = document.createElement('div');
+            row.className = 'compare-row' + (colData.isReal ? '' : ' proj');
+            row.innerHTML = `
+                <div class="compare-row-top">
+                    <span class="compare-date">${colData.date}</span>
+                    <span class="badge ${colData.isReal ? 'real' : 'proj'}">${colData.detail}</span>
+                    <span class="compare-gain">+${colData.gainsAnnuels.toFixed(0)} €</span>
+                </div>
+                <div class="compare-bar-track"><div class="compare-bar-fill" style="width:${pct}%"></div></div>
+                <div class="compare-row-bottom">
+                    <span>Facture ${colData.facture.toFixed(0)} €</span>
+                    <span>${colData.kwh} kWh</span>
+                    <span class="compare-reste">Reste ${resteCap.toFixed(0)} €</span>
+                </div>
+            `;
+            compareContainer.appendChild(row);
         });
 
         if (typeof Chart !== 'undefined') {
             try {
                 if(roiChartInstance) roiChartInstance.destroy();
                 if(breakdownChartInstance) breakdownChartInstance.destroy();
+                if(gainCompareChartInstance) gainCompareChartInstance.destroy();
 
                 Chart.defaults.color = '#94a3b8';
                 Chart.defaults.borderColor = 'rgba(255, 255, 255, 0.04)';
@@ -782,6 +727,38 @@
                             scales: {
                                 x: { grid: { display: false } },
                                 y: { 
+                                  grid: { color: 'rgba(255, 255, 255, 0.03)' },
+                                  ticks: { padding: 8 }
+                                }
+                            }
+                        }
+                    });
+                }
+
+                const ctxGainCompare = document.getElementById('gainCompareChart');
+                if(ctxGainCompare) {
+                    const ctxGainCompare2d = ctxGainCompare.getContext('2d');
+
+                    gainCompareChartInstance = new Chart(ctxGainCompare2d, {
+                        type: 'bar',
+                        data: {
+                            labels: fullDashboardData.map(d => d.date),
+                            datasets: [{
+                                label: 'Gain annuel',
+                                data: fullDashboardData.map(d => d.gainsAnnuels),
+                                backgroundColor: fullDashboardData.map(d => d.isReal ? 'rgba(74, 222, 128, 0.55)' : 'rgba(255, 255, 255, 0.12)'),
+                                borderColor: fullDashboardData.map(d => d.isReal ? '#4ade80' : 'rgba(255, 255, 255, 0.25)'),
+                                borderWidth: 1.5,
+                                borderRadius: 4
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: { legend: { display: false } },
+                            scales: {
+                                x: { grid: { display: false } },
+                                y: {
                                   grid: { color: 'rgba(255, 255, 255, 0.03)' },
                                   ticks: { padding: 8 }
                                 }
