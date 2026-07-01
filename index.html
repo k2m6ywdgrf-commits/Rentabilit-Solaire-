@@ -171,6 +171,29 @@
   .compare-reste { color: var(--neon-red); font-weight: 600; }
   .compare-extra.hidden { display: none; }
   .compare-row.proj .compare-reste { color: var(--text-muted); }
+
+  /* --- STYLES MODAL GAINS CUMULÉS --- */
+  .modal-overlay {
+    position: fixed; inset: 0; background: rgba(0, 0, 0, 0.75);
+    backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px);
+    z-index: 2000; display: flex; align-items: center; justify-content: center;
+    opacity: 0; pointer-events: none; transition: opacity 0.25s ease; padding: 16px;
+  }
+  .modal-overlay.active { opacity: 1; pointer-events: auto; }
+  .modal-content {
+    background: var(--glass-bg); border: var(--glass-border);
+    border-radius: 20px; width: 100%; max-width: 480px; padding: 20px;
+    box-shadow: 0 24px 48px rgba(0, 0, 0, 0.6); max-height: 80vh; overflow-y: auto;
+    position: relative; transform: translateY(15px); transition: transform 0.25s ease;
+  }
+  .modal-overlay.active .modal-content { transform: translateY(0); }
+  .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; border-bottom: 1px solid rgba(255, 255, 255, 0.08); padding-bottom: 12px; }
+  .modal-title { font-size: 16px; font-weight: 700; color: var(--text-main); }
+  .close-modal { background: none; border: none; color: var(--text-muted); font-size: 22px; cursor: pointer; width: auto; padding: 0 4px; }
+  .modal-table { width: 100%; border-collapse: collapse; text-align: left; font-size: 13px; }
+  .modal-table th, .modal-table td { padding: 10px 6px; border-bottom: 1px solid rgba(255, 255, 255, 0.05); }
+  .modal-table th { color: var(--text-muted); font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 700; }
+  .modal-total-row { font-weight: 700; background: rgba(255, 255, 255, 0.02); }
 </style>
 </head>
 <body>
@@ -228,10 +251,10 @@
             </div>
 
             <div class="kpi-grid">
-                <div class="card card-tint-green icon-card kpi-card">
+                <div class="card card-tint-green icon-card kpi-card" onclick="openGainsModal()" style="cursor: pointer;">
                     <div class="icon-card-icon">💰</div>
                     <div class="icon-card-body">
-                        <h2>Gains Cumulés</h2>
+                        <h2>Gains Cumulés ⓘ</h2>
                         <div class="kpi-value green" id="kpi-gains">0 €</div>
                         <div class="kpi-note">Économies + revente</div>
                     </div>
@@ -391,6 +414,17 @@
                 <div id="aidsList" style="margin-top: 10px;"></div>
             </div>
         </div>
+    </div>
+</div>
+
+<div id="gainsModal" class="modal-overlay" onclick="closeGainsModal()">
+    <div class="modal-content" onclick="event.stopPropagation()">
+        <div class="modal-header">
+            <h3 class="modal-title">💰 Détail des Gains Réels Cumulés</h3>
+            <button class="close-modal" onclick="closeGainsModal()">✕</button>
+        </div>
+        <div id="modalGainsBody">
+            </div>
     </div>
 </div>
 
@@ -950,6 +984,72 @@
                 }
             } catch(e) { console.error("Erreur chart", e); }
         }
+    }
+
+    /* --- FONCTIONS JAVASCRIPT POUR LA MODAL DES GAINS --- */
+    function openGainsModal() {
+        const modal = document.getElementById('gainsModal');
+        const body = document.getElementById('modalGainsBody');
+        if (!modal || !body) return;
+
+        const aidesParPeriode = {};
+        oneTimeAids.forEach(aid => { aidesParPeriode[aid.date] = (aidesParPeriode[aid.date] || 0) + aid.montant; });
+        
+        let processedRealRows = appData.map(row => processRowCalculations(row, row.date === "juin-23", aidesParPeriode[row.date] || 0));
+
+        let totalEco = 0;
+        let totalRevente = 0;
+        let totalAide = 0;
+        let totalGains = 0;
+
+        let rowsHtml = processedRealRows.map(r => {
+            totalEco += r.economies;
+            totalRevente += r.revente;
+            totalAide += r.aide;
+            totalGains += r.gainsAnnuels;
+
+            return `
+                <tr>
+                    <td style="padding: 12px 6px;">
+                        <b>${r.date}</b><br>
+                        <span style="font-size:10px; color:var(--text-muted);">${r.detail}</span>
+                    </td>
+                    <td style="text-align: right; color: var(--neon-blue); font-weight: 500;">${Math.round(r.economies).toLocaleString('fr-FR')} €</td>
+                    <td style="text-align: right; color: var(--neon-orange); font-weight: 500;">${Math.round(r.revente).toLocaleString('fr-FR')} €</td>
+                    <td style="text-align: right; font-weight: 600; color: var(--neon-green);">${Math.round(r.gainsAnnuels).toLocaleString('fr-FR')} €</td>
+                </tr>
+            `;
+        }).join('');
+
+        body.innerHTML = `
+            <table class="modal-table">
+                <thead>
+                    <tr>
+                        <th>Période</th>
+                        <th style="text-align: right;">Économies</th>
+                        <th style="text-align: right;">Revente</th>
+                        <th style="text-align: right;">Total</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${rowsHtml}
+                    <tr class="modal-total-row" style="border-top: 2px solid rgba(255,255,255,0.15); background-color: rgba(255,255,255,0.02)">
+                        <td style="padding: 14px 6px;"><b>Cumulé</b></td>
+                        <td style="text-align: right; color: var(--neon-blue); font-weight: 700;">${Math.round(totalEco).toLocaleString('fr-FR')} €</td>
+                        <td style="text-align: right; color: var(--neon-orange); font-weight: 700;">${Math.round(totalRevente).toLocaleString('fr-FR')} €</td>
+                        <td style="text-align: right; color: var(--neon-green); font-weight: 700; font-size: 15px;">${Math.round(totalGains).toLocaleString('fr-FR')} €</td>
+                    </tr>
+                </tbody>
+            </table>
+            ${totalAide > 0 ? `<p style="font-size: 11px; color: var(--text-muted); margin-top: 14px; text-align: center;">💡 Ce total inclut un cumul de <b>${Math.round(totalAide).toLocaleString('fr-FR')} €</b> d'aides ou primes de base.</p>` : ''}
+        `;
+
+        modal.classList.add('active');
+    }
+
+    function closeGainsModal() {
+        const modal = document.getElementById('gainsModal');
+        if (modal) modal.classList.remove('active');
     }
 
     loadLocalData();
