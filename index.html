@@ -82,7 +82,6 @@
   .card-tint-amber { background: linear-gradient(160deg, rgba(251,191,36,0.16), rgba(11,15,25,0.55)); border-color: rgba(251,191,36,0.22); }
   .card-tint-teal { background: linear-gradient(160deg, rgba(45,212,191,0.16), rgba(11,15,25,0.55)); border-color: rgba(45,212,191,0.22); }
 
-  .kpi-card { display: flex; flex-direction: column; gap: 2px; }
   .kpi-value { font-size: 26px; font-weight: 700; letter-spacing: -0.5px; }
   .kpi-value.green { color: var(--neon-green); }
   .kpi-value.red { color: var(--neon-red); }
@@ -91,8 +90,16 @@
   .kpi-value.teal { color: #2dd4bf; }
   .kpi-note { font-size: 11px; color: var(--text-muted); margin-top: 6px; }
 
-  .co2-card { display: flex; align-items: center; gap: 14px; }
-  .co2-icon { font-size: 28px; }
+  /* --- CARTES "ICÔNE + CONTENU" (style CO2) --- */
+  .icon-card { display: flex; align-items: center; gap: 12px; }
+  .icon-card-icon {
+    flex-shrink: 0; font-size: 26px; line-height: 1; width: 44px; height: 44px;
+    display: flex; align-items: center; justify-content: center;
+    border-radius: 12px; background: rgba(255, 255, 255, 0.06);
+  }
+  .icon-card-body { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+  .icon-card-body h2 { margin-bottom: 4px; }
+  .icon-card.kpi-card .kpi-value { font-size: 21px; }
 
   .hero-card-head { display: flex; justify-content: space-between; align-items: flex-start; }
   .hero-icon { font-size: 26px; opacity: 0.9; }
@@ -218,15 +225,21 @@
             </div>
 
             <div class="kpi-grid">
-                <div class="card card-tint-green kpi-card">
-                    <h2>Gains Cumulés</h2>
-                    <div class="kpi-value green" id="kpi-gains">0 €</div>
-                    <div class="kpi-note">Économies + revente réelles</div>
+                <div class="card card-tint-green icon-card kpi-card">
+                    <div class="icon-card-icon">💰</div>
+                    <div class="icon-card-body">
+                        <h2>Gains Cumulés</h2>
+                        <div class="kpi-value green" id="kpi-gains">0 €</div>
+                        <div class="kpi-note">Économies + revente</div>
+                    </div>
                 </div>
-                <div class="card card-tint-red kpi-card">
-                    <h2>Reste Dû</h2>
-                    <div class="kpi-value red" id="kpi-rest">0 €</div>
-                    <div class="kpi-note">Sur investissement initial</div>
+                <div class="card card-tint-red icon-card kpi-card">
+                    <div class="icon-card-icon">⏳</div>
+                    <div class="icon-card-body">
+                        <h2>Reste Dû</h2>
+                        <div class="kpi-value red" id="kpi-rest">0 €</div>
+                        <div class="kpi-note">Sur investissement</div>
+                    </div>
                 </div>
             </div>
 
@@ -240,22 +253,28 @@
             </div>
 
             <div class="kpi-grid">
-                <div class="card card-tint-blue kpi-card">
-                    <h2>Tarif Moyen</h2>
-                    <div class="kpi-value blue" id="kpi-tarif">0.00 €</div>
-                    <div class="kpi-note" id="kpi-tarif-note">par kWh, dernière période</div>
+                <div class="card card-tint-blue icon-card kpi-card">
+                    <div class="icon-card-icon">⚡</div>
+                    <div class="icon-card-body">
+                        <h2>Tarif Moyen</h2>
+                        <div class="kpi-value blue" id="kpi-tarif">0.00 €</div>
+                        <div class="kpi-note" id="kpi-tarif-note">par kWh</div>
+                    </div>
                 </div>
-                <div class="card card-tint-amber kpi-card">
-                    <h2>Économie Mensuelle</h2>
-                    <div class="kpi-value amber" id="kpi-eco-mensuelle">0 €</div>
-                    <div class="kpi-note">Moyenne sur la dernière année</div>
+                <div class="card card-tint-amber icon-card kpi-card">
+                    <div class="icon-card-icon">🗓️</div>
+                    <div class="icon-card-body">
+                        <h2>Économie Mensuelle</h2>
+                        <div class="kpi-value amber" id="kpi-eco-mensuelle">0 €</div>
+                        <div class="kpi-note">Moy. dernière année</div>
+                    </div>
                 </div>
             </div>
 
-            <div class="card card-tint-teal co2-card">
-                <div class="co2-icon">🌱</div>
-                <div>
-                    <h2 style="margin-bottom: 4px;">CO2 Évité (estimation)</h2>
+            <div class="card card-tint-teal icon-card">
+                <div class="icon-card-icon">🌱</div>
+                <div class="icon-card-body">
+                    <h2>CO2 Évité (estimation)</h2>
                     <div class="kpi-value teal" id="kpi-co2">0 kg</div>
                     <div class="kpi-note">Basé sur le kWh économisé et le mix électrique moyen français (~56 g/kWh)</div>
                 </div>
