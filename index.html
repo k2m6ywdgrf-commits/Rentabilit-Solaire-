@@ -73,6 +73,37 @@
 
   .card h2 { margin: 0 0 12px; font-size: 11px; color: var(--text-muted); font-weight: 700; text-transform: uppercase; letter-spacing: 1px; }
 
+  /* --- CARTES TEINTÉES --- */
+  .kpi-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 14px; }
+  .card-tint-green { background: linear-gradient(160deg, rgba(74,222,128,0.16), rgba(11,15,25,0.55)); border-color: rgba(74,222,128,0.22); }
+  .card-tint-red { background: linear-gradient(160deg, rgba(244,63,94,0.16), rgba(11,15,25,0.55)); border-color: rgba(244,63,94,0.22); }
+  .card-tint-blue { background: linear-gradient(160deg, rgba(56,189,248,0.16), rgba(11,15,25,0.55)); border-color: rgba(56,189,248,0.22); }
+  .card-tint-purple { background: linear-gradient(160deg, rgba(167,139,250,0.16), rgba(11,15,25,0.55)); border-color: rgba(167,139,250,0.22); }
+  .card-tint-amber { background: linear-gradient(160deg, rgba(251,191,36,0.16), rgba(11,15,25,0.55)); border-color: rgba(251,191,36,0.22); }
+  .card-tint-teal { background: linear-gradient(160deg, rgba(45,212,191,0.16), rgba(11,15,25,0.55)); border-color: rgba(45,212,191,0.22); }
+
+  .kpi-card { display: flex; flex-direction: column; gap: 2px; }
+  .kpi-value { font-size: 26px; font-weight: 700; letter-spacing: -0.5px; }
+  .kpi-value.green { color: var(--neon-green); }
+  .kpi-value.red { color: var(--neon-red); }
+  .kpi-value.blue { color: var(--neon-blue); }
+  .kpi-value.amber { color: #fbbf24; }
+  .kpi-value.teal { color: #2dd4bf; }
+  .kpi-note { font-size: 11px; color: var(--text-muted); margin-top: 6px; }
+
+  .co2-card { display: flex; align-items: center; gap: 14px; }
+  .co2-icon { font-size: 28px; }
+
+  .hero-card-head { display: flex; justify-content: space-between; align-items: flex-start; }
+  .hero-icon { font-size: 26px; opacity: 0.9; }
+
+  .progress-track {
+    position: relative; height: 10px; border-radius: 6px; overflow: hidden;
+    background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.04); margin: 10px 0 8px;
+  }
+  .progress-fill { height: 100%; border-radius: 6px; background: linear-gradient(to right, var(--neon-purple), var(--neon-blue)); width: 0%; transition: width 0.8s ease-out; }
+  .progress-scale { display: flex; justify-content: space-between; font-size: 10px; color: var(--text-muted); }
+
   /* --- SECTION KPI - AJUSTEMENT TEXTE ET FLEX --- */
   .renta-summary { display: flex; flex-direction: column; gap: 8px; margin-bottom: 14px; }
   .renta-values { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; }
@@ -178,29 +209,64 @@
         </div>
 
         <div id="graphiques" class="tab-content active">
-            <div class="card rents-summary-card">
-                <h2>Bilan d'Amortissement Global</h2>
-                <div class="renta-summary">
-                    <div class="renta-values">
-                        <div class="renta-total" id="kpi-gains">0 €</div>
-                        <div class="renta-target" id="kpi-invest">Valeur de l'investissement : 0 €</div>
-                    </div>
-                    <div class="renta-gauge-bar">
-                        <div class="renta-gauge-fill" id="kpi-gauge"></div>
-                    </div>
-                    <div class="renta-sub-stats">
-                        <div>Reste dû : <strong class="renta-reste" id="kpi-rest">0 €</strong></div>
-                        <div>Point mort estimé : <strong class="renta-deadline" id="kpi-years">...</strong></div>
-                    </div>
+            <div class="card hero-card">
+                <div class="hero-card-head">
+                    <h2 style="margin:0;">Bilan d'Amortissement Global</h2>
+                    <div class="hero-icon">☀️</div>
+                </div>
+                <div class="renta-target" id="kpi-invest" style="margin-top: 8px;">Valeur de l'investissement : 0 €</div>
+            </div>
+
+            <div class="kpi-grid">
+                <div class="card card-tint-green kpi-card">
+                    <h2>Gains Cumulés</h2>
+                    <div class="kpi-value green" id="kpi-gains">0 €</div>
+                    <div class="kpi-note">Économies + revente réelles</div>
+                </div>
+                <div class="card card-tint-red kpi-card">
+                    <h2>Reste Dû</h2>
+                    <div class="kpi-value red" id="kpi-rest">0 €</div>
+                    <div class="kpi-note">Sur investissement initial</div>
                 </div>
             </div>
 
-            <div class="card graphs-card">
+            <div class="card card-tint-purple">
+                <h2>🎯 Progression vers le Point Mort</h2>
+                <div class="progress-track"><div class="progress-fill" id="kpi-gauge"></div></div>
+                <div class="progress-scale">
+                    <span>0 €</span>
+                    <span>Estimé : <strong style="color: var(--neon-blue);" id="kpi-years">...</strong></span>
+                </div>
+            </div>
+
+            <div class="kpi-grid">
+                <div class="card card-tint-blue kpi-card">
+                    <h2>Tarif Moyen</h2>
+                    <div class="kpi-value blue" id="kpi-tarif">0.00 €</div>
+                    <div class="kpi-note" id="kpi-tarif-note">par kWh, dernière période</div>
+                </div>
+                <div class="card card-tint-amber kpi-card">
+                    <h2>Économie Mensuelle</h2>
+                    <div class="kpi-value amber" id="kpi-eco-mensuelle">0 €</div>
+                    <div class="kpi-note">Moyenne sur la dernière année</div>
+                </div>
+            </div>
+
+            <div class="card card-tint-teal co2-card">
+                <div class="co2-icon">🌱</div>
+                <div>
+                    <h2 style="margin-bottom: 4px;">CO2 Évité (estimation)</h2>
+                    <div class="kpi-value teal" id="kpi-co2">0 kg</div>
+                    <div class="kpi-note">Basé sur le kWh économisé et le mix électrique moyen français (~56 g/kWh)</div>
+                </div>
+            </div>
+
+            <div class="card graphs-card card-tint-blue">
                 <h2>📉 Trajectoire du Point Mort</h2>
                 <div style="position: relative; height:180px;"><canvas id="roiChart"></canvas></div>
             </div>
-            
-            <div class="card graphs-card">
+
+            <div class="card graphs-card card-tint-green">
                 <h2>⚡ Facture vs Économies Réelles</h2>
                 <div style="position: relative; height:180px;"><canvas id="breakdownChart"></canvas></div>
             </div>
@@ -445,13 +511,19 @@
         document.body.appendChild(downloadAnchor); downloadAnchor.click(); downloadAnchor.remove();
     }
 
+    const CO2_KG_PAR_KWH = 0.056;
+
     function processRowCalculations(row, isReferencePeriod) {
         const tarif = row.kwh > 0 ? (row.facture / row.kwh) : 0;
         let economies = 0;
-        if (!isReferencePeriod && row.kwh < refKwh) { economies = (refKwh - row.kwh) * tarif; }
+        let kwhEconomises = 0;
+        if (!isReferencePeriod && row.kwh < refKwh) {
+            kwhEconomises = refKwh - row.kwh;
+            economies = kwhEconomises * tarif;
+        }
         if(row.date === "juin-24" && row.facture === 2309.18) { economies = 80.15; }
         const gainsAnnuels = economies + row.revente;
-        return { ...row, tarif, economies, gainsAnnuels };
+        return { ...row, tarif, economies, kwhEconomises, gainsAnnuels };
     }
 
     function initSaisieTab() {
@@ -494,13 +566,32 @@
         const kpiRest = document.getElementById('kpi-rest');
         const kpiYears = document.getElementById('kpi-years');
         const kpiGauge = document.getElementById('kpi-gauge');
-        
+
         if (kpiGains) kpiGains.innerText = Math.round(totalGainsReels).toLocaleString('fr-FR') + " €";
         if (kpiRest) kpiRest.innerText = Math.round(resteAAmortir).toLocaleString('fr-FR') + " €";
         if (kpiYears) kpiYears.innerText = `~${tempsTotalEstime.toFixed(1)} ans`;
-        
+
         let pPct = appInvest > 0 ? (totalGainsReels / appInvest) * 100 : 0;
         if (kpiGauge) kpiGauge.style.width = Math.min(100, pPct) + "%";
+
+        const kpiTarif = document.getElementById('kpi-tarif');
+        const kpiTarifNote = document.getElementById('kpi-tarif-note');
+        if (kpiTarif && processedRealRows.length > 0) {
+            const dernierTarif = processedRealRows[processedRealRows.length - 1];
+            kpiTarif.innerText = dernierTarif.tarif.toFixed(2) + " €";
+            if (kpiTarifNote) kpiTarifNote.innerText = `par kWh, période ${dernierTarif.date}`;
+        }
+
+        const kpiEcoMensuelle = document.getElementById('kpi-eco-mensuelle');
+        if (kpiEcoMensuelle) {
+            kpiEcoMensuelle.innerText = Math.round(derniereAnneeGains / 12).toLocaleString('fr-FR') + " €";
+        }
+
+        const kpiCo2 = document.getElementById('kpi-co2');
+        if (kpiCo2) {
+            const totalKwhEconomises = processedRealRows.reduce((acc, r) => acc + r.kwhEconomises, 0);
+            kpiCo2.innerText = Math.round(totalKwhEconomises * CO2_KG_PAR_KWH).toLocaleString('fr-FR') + " kg";
+        }
 
         let fullDashboardData = processedRealRows.map(r => ({...r, isReal: true}));
         let simulatedRenta = appInvest - totalGainsReels;
