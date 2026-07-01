@@ -7,6 +7,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Solaire Glass">
+<meta name="theme-color" content="#1e1b4b">
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <style>
   :root {
@@ -48,17 +49,9 @@
 
   .container { max-width: 600px; margin: 0 auto; }
   
-  header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding-top: 4px; }
+  header { margin-bottom: 20px; padding-top: 4px; }
   h1 { font-size: 22px; font-weight: 700; letter-spacing: -0.5px; text-align: left; }
   .subtitle { color: var(--text-muted); font-size: 12px; margin-top: 4px; text-align: left; }
-
-  .header-icon-btn {
-    flex-shrink: 0; width: 40px; height: 40px; padding: 0;
-    display: flex; align-items: center; justify-content: center;
-    border-radius: 50%; font-size: 17px;
-    background: var(--glass-bg); border: var(--glass-border);
-    backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
-  }
 
   /* --- ÉLÉMENTS VERRE --- */
   .card {
@@ -154,8 +147,12 @@
   .compare-bar-track { height: 8px; border-radius: 5px; background: rgba(255,255,255,0.06); overflow: hidden; margin-bottom: 6px; }
   .compare-bar-fill { height: 100%; border-radius: 5px; background: linear-gradient(to right, #38bdf8, #4ade80); }
   .compare-row.proj .compare-bar-fill { background: rgba(255,255,255,0.18); }
-  .compare-row-bottom { display: flex; justify-content: space-between; font-size: 10.5px; color: var(--text-muted); }
+  .compare-row-bottom { display: grid; grid-template-columns: 1fr 1fr 1fr; font-size: 10.5px; color: var(--text-muted); }
+  .compare-row-bottom span:nth-child(1) { text-align: left; }
+  .compare-row-bottom span:nth-child(2) { text-align: center; }
+  .compare-row-bottom span:nth-child(3) { text-align: right; }
   .compare-reste { color: var(--neon-red); font-weight: 600; }
+  .compare-extra.hidden { display: none; }
   .compare-row.proj .compare-reste { color: var(--text-muted); }
 </style>
 </head>
@@ -165,17 +162,14 @@
 
     <div id="main-application">
         <header>
-            <div>
-                <h1>☀️ Amortissement Solaire</h1>
-                <p class="subtitle">Glissez horizontalement pour parcourir les années</p>
-            </div>
-            <button class="header-icon-btn" onclick="openSettingsFromHeader()" aria-label="Réglages">⚙️</button>
+            <h1>☀️ Amortissement Solaire</h1>
+            <p class="subtitle">Glissez horizontalement pour parcourir les années</p>
         </header>
 
         <div class="tabs">
             <button class="tab-btn active" onclick="openTab(event, 'graphiques')">📊 Rendement</button>
             <button class="tab-btn" onclick="openTab(event, 'saisie')">✍️ Saisie</button>
-            <button class="tab-btn" id="tab-btn-config" onclick="openTab(event, 'config')">⚙️ Paramètres</button>
+            <button class="tab-btn" onclick="openTab(event, 'config')">⚙️ Paramètres</button>
         </div>
 
         <div id="graphiques" class="tab-content active">
@@ -259,6 +253,8 @@
                 <div style="position: relative; height:140px;"><canvas id="gainCompareChart"></canvas></div>
                 <hr class="divider">
                 <div id="summaryCompare" class="compare-list"></div>
+                <div id="summaryCompareExtra" class="compare-list compare-extra hidden" style="margin-top: 10px;"></div>
+                <button class="btn-gray" id="toggleProjBtn" onclick="toggleProjectedYears()" style="margin-top: 10px; display: none;">Afficher les années suivantes ▾</button>
             </div>
         </div>
 
@@ -380,6 +376,15 @@
     let roiChartInstance = null;
     let breakdownChartInstance = null;
     let gainCompareChartInstance = null;
+    let projectedYearsExpanded = false;
+
+    function toggleProjectedYears() {
+        projectedYearsExpanded = !projectedYearsExpanded;
+        const extra = document.getElementById('summaryCompareExtra');
+        const btn = document.getElementById('toggleProjBtn');
+        if (extra) extra.classList.toggle('hidden', !projectedYearsExpanded);
+        if (btn) btn.innerText = projectedYearsExpanded ? 'Masquer les années suivantes ▴' : 'Afficher les années suivantes ▾';
+    }
 
     function loadLocalData() {
         const localStoreData = safeGetItem('solar_data_cloud_v1');
@@ -425,10 +430,6 @@
         updateAutoFields();
         populateAidPeriodSelect();
         renderAidsList();
-    }
-
-    function openSettingsFromHeader() {
-        openTab({ currentTarget: document.getElementById('tab-btn-config') }, 'config');
     }
 
     function openTab(event, tabId) {
@@ -668,15 +669,20 @@
         }
 
         const compareContainer = document.getElementById('summaryCompare');
+        const compareExtraContainer = document.getElementById('summaryCompareExtra');
+        const toggleProjBtn = document.getElementById('toggleProjBtn');
         if(!compareContainer) return;
         compareContainer.innerHTML = '';
+        if (compareExtraContainer) compareExtraContainer.innerHTML = '';
 
         const maxGain = Math.max(...fullDashboardData.map(r => r.gainsAnnuels), 1);
         let cumulRunning = 0;
+        let projectedSeen = 0;
         fullDashboardData.forEach(colData => {
             cumulRunning += colData.gainsAnnuels;
             const resteCap = Math.max(0, appInvest - cumulRunning);
             const pct = Math.max(4, (colData.gainsAnnuels / maxGain) * 100);
+            if (!colData.isReal) projectedSeen++;
 
             const row = document.createElement('div');
             row.className = 'compare-row' + (colData.isReal ? '' : ' proj');
@@ -694,8 +700,21 @@
                     <span class="compare-reste">Reste ${resteCap.toFixed(0)} €</span>
                 </div>
             `;
-            compareContainer.appendChild(row);
+
+            // Années complétées + 1 année de prévision affichées d'office ; le reste des projections est repliable.
+            if (colData.isReal || projectedSeen === 1) {
+                compareContainer.appendChild(row);
+            } else if (compareExtraContainer) {
+                compareExtraContainer.appendChild(row);
+            }
         });
+
+        if (toggleProjBtn) {
+            const hasExtra = compareExtraContainer && compareExtraContainer.children.length > 0;
+            toggleProjBtn.style.display = hasExtra ? 'block' : 'none';
+            toggleProjBtn.innerText = projectedYearsExpanded ? 'Masquer les années suivantes ▴' : 'Afficher les années suivantes ▾';
+            if (compareExtraContainer) compareExtraContainer.classList.toggle('hidden', !projectedYearsExpanded);
+        }
 
         if (typeof Chart !== 'undefined') {
             try {
