@@ -101,41 +101,12 @@
   .icon-card-body h2 { margin-bottom: 4px; }
   .icon-card.kpi-card .kpi-value { font-size: 21px; }
 
-  .hero-card-head { display: flex; justify-content: space-between; align-items: flex-start; }
-  .hero-icon { font-size: 26px; opacity: 0.9; }
-
   .progress-track {
     position: relative; height: 10px; border-radius: 6px; overflow: hidden;
     background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.04); margin: 10px 0 8px;
   }
   .progress-fill { height: 100%; border-radius: 6px; background: linear-gradient(to right, var(--neon-purple), var(--neon-blue)); width: 0%; transition: width 0.8s ease-out; }
   .progress-scale { display: flex; justify-content: space-between; font-size: 10px; color: var(--text-muted); }
-
-  /* --- SECTION KPI - AJUSTEMENT TEXTE ET FLEX --- */
-  .renta-summary { display: flex; flex-direction: column; gap: 8px; margin-bottom: 14px; }
-  .renta-values { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; }
-  .renta-total { font-size: 24px; font-weight: 700; color: var(--neon-blue); letter-spacing: -1px; }
-  .renta-target { font-size: 12px; color: var(--text-muted); font-weight: 500; }
-  
-  .renta-gauge-bar {
-    position: relative;
-    height: 12px;
-    background: rgba(255, 255, 255, 0.08);
-    border-radius: 6px;
-    overflow: hidden;
-    border: 1px solid rgba(255, 255, 255, 0.04);
-  }
-  .renta-gauge-fill {
-    height: 100%;
-    border-radius: 6px;
-    background: linear-gradient(to right, var(--neon-blue), var(--neon-green));
-    width: 0%;
-    transition: width 0.8s ease-out;
-  }
-  
-  .renta-sub-stats { display: flex; justify-content: space-between; font-size: 12px; color: var(--text-muted); margin-top: 4px; }
-  .renta-reste { color: var(--neon-red); font-weight: 600; }
-  .renta-deadline { color: var(--neon-blue); font-weight: 600; }
 
   /* FORMULAIRE & SAISIE */
   .row { display: flex; flex-direction: column; gap: 4px; margin-bottom: 12px; text-align: left; }
@@ -172,26 +143,28 @@
   .badge.proj { background: rgba(255, 255, 255, 0.08); color: #e2e8f0; border: 1px solid rgba(255, 255, 255, 0.05); }
   .proj-col { color: var(--text-muted) !important; font-style: italic; }
 
-  .table-container { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; border-radius: 12px; }
-  table.transposed-table { width: max-content; min-width: 100%; border-collapse: collapse; font-size: 11px; }
-  
-  table.transposed-table td.row-header { 
+  .table-container { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.08); }
+  table.transposed-table { width: max-content; min-width: 100%; border-collapse: collapse; font-size: 12.5px; color: #e5e7eb; }
+
+  table.transposed-table td.row-header {
     background-color: #0b0f19 !important;
-    color: var(--text-muted); 
-    font-weight: 600; 
-    position: sticky; 
-    left: 0; 
-    z-index: 10; 
+    color: #cbd5e1;
+    font-weight: 700;
+    position: sticky;
+    left: 0;
+    z-index: 10;
     width: 105px;
     min-width: 105px;
-    border-right: 1.5px solid rgba(255, 255, 255, 0.1); 
+    border-right: 1.5px solid rgba(255, 255, 255, 0.16);
     text-align: left;
-    padding-left: 6px;
+    padding-left: 8px;
   }
 
-  table.transposed-table td, table.transposed-table th { padding: 6px 8px; border-bottom: 1px solid rgba(255, 255, 255, 0.04); border-right: 1px solid rgba(255, 255, 255, 0.01); text-align: center; }
-  table.transposed-table tr.years-header th { background: rgba(0, 0, 0, 0.3); color: #fff; font-weight: 700; }
+  table.transposed-table td, table.transposed-table th { padding: 9px 8px; border-bottom: 1px solid rgba(255, 255, 255, 0.09); border-right: 1px solid rgba(255, 255, 255, 0.04); text-align: center; }
+  table.transposed-table tr.years-header th { background: rgba(255, 255, 255, 0.08); color: #fff; font-weight: 700; font-size: 13px; }
   table.transposed-table tr.years-header td.row-header { background-color: #0b0f19 !important; color: #fff; }
+  table.transposed-table tr:nth-child(even) td:not(.row-header) { background: rgba(255, 255, 255, 0.035); }
+  table.transposed-table tr:hover td:not(.row-header) { background: rgba(56, 189, 248, 0.08); }
 
   .btn-danger-item { background: transparent; color: var(--neon-red); width: auto; padding: 4px 8px; font-size: 11px; border-radius: 6px; border: 1px solid rgba(244,63,94,0.2); font-weight: 500; }
 </style>
@@ -216,12 +189,13 @@
         </div>
 
         <div id="graphiques" class="tab-content active">
-            <div class="card hero-card">
-                <div class="hero-card-head">
-                    <h2 style="margin:0;">Bilan d'Amortissement Global</h2>
-                    <div class="hero-icon">☀️</div>
+            <div class="card card-tint-purple icon-card kpi-card hero-card">
+                <div class="icon-card-icon">☀️</div>
+                <div class="icon-card-body">
+                    <h2>Investissement Solaire</h2>
+                    <div class="kpi-value" style="color: var(--neon-purple);" id="kpi-invest">0 €</div>
+                    <div class="kpi-note">Coût initial de l'installation</div>
                 </div>
-                <div class="renta-target" id="kpi-invest" style="margin-top: 8px;">Valeur de l'investissement : 0 €</div>
             </div>
 
             <div class="kpi-grid">
@@ -564,9 +538,8 @@
     }
 
     function calculateAndRender() {
-        // AJUSTEMENT : Libellé "Valeur de l'investissement" explicite
         const kpiInv = document.getElementById('kpi-invest');
-        if (kpiInv) kpiInv.innerText = "Valeur de l’investissement : " + Math.round(appInvest).toLocaleString('fr-FR') + " €";
+        if (kpiInv) kpiInv.innerText = Math.round(appInvest).toLocaleString('fr-FR') + " €";
         
         let processedRealRows = appData.map(row => processRowCalculations(row, row.date === "juin-23"));
 
