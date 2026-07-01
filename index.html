@@ -140,6 +140,7 @@
   .badge { display: inline-block; padding: 2px 6px; border-radius: 4px; font-size: 9px; font-weight: 700; text-transform: uppercase; }
   .badge.real { background: rgba(74, 222, 128, 0.15); color: var(--neon-green); }
   .badge.proj { background: rgba(255, 255, 255, 0.08); color: #e2e8f0; border: 1px solid rgba(255, 255, 255, 0.05); }
+  .badge.aid { background: rgba(251, 191, 36, 0.15); color: #fbbf24; }
 
   .btn-danger-item { background: transparent; color: var(--neon-red); width: auto; padding: 4px 8px; font-size: 11px; border-radius: 6px; border: 1px solid rgba(244,63,94,0.2); font-weight: 500; }
 
@@ -341,6 +342,21 @@
                 <hr class="divider">
                 <button class="btn-gray" onclick="resetToDefault()">Réinitialiser d'origine</button>
             </div>
+
+            <div class="card card-tint-amber config-aids-card">
+                <h2>🎁 Aides Ponctuelles</h2>
+                <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 12px;">
+                    Primes ou aides one-shot (ex : aide à l'autoconsommation) déjà comprises dans une revente saisie. Comptées dans vos gains réels, mais exclues du calcul des années projetées pour ne pas fausser les estimations.
+                </p>
+                <div class="sim-row" style="flex-wrap: wrap; gap: 6px; border-bottom: none; padding-bottom: 0;">
+                    <span>Aide de</span>
+                    <input type="number" step="0.01" id="aid-amount" placeholder="1000" style="width: 90px; padding: 8px; background-color: var(--input-bg); border: 1px solid rgba(255,255,255,0.05); border-radius: 8px; color: #fff; font-size: 13px;">
+                    <span>€ reçue pour la période de</span>
+                    <select id="aid-period" style="padding: 8px; background-color: var(--input-bg); border: 1px solid rgba(255,255,255,0.05); border-radius: 8px; color: #fff; font-size: 13px;"></select>
+                </div>
+                <button class="btn-blue" onclick="addOneTimeAid()" style="margin-top: 10px;">Ajouter l'aide</button>
+                <div id="aidsList" style="margin-top: 10px;"></div>
+            </div>
         </div>
     </div>
 </div>
@@ -359,6 +375,7 @@
     let appData = [...defaultData];
     let appInvest = 14430.00;
     let refKwh = 10225;
+    let oneTimeAids = [];
 
     let roiChartInstance = null;
     let breakdownChartInstance = null;
@@ -371,6 +388,7 @@
                 appData = JSON.parse(localStoreData);
                 appInvest = parseFloat(safeGetItem('solar_invest_cloud_v1')) || 14430.00;
                 refKwh = parseInt(safeGetItem('solar_ref_kwh_cloud_v1')) || 10225;
+                oneTimeAids = JSON.parse(safeGetItem('solar_aids_v1')) || [];
             } catch(e) {}
         }
         launchApplication();
@@ -388,6 +406,7 @@
                     appData = parsed.appData;
                     appInvest = parsed.appInvest;
                     refKwh = parsed.refKwh;
+                    oneTimeAids = parsed.oneTimeAids || [];
                     saveAllToLocalStorage();
                     initSaisieTab();
                     calculateAndRender();
@@ -404,6 +423,8 @@
         initSaisieTab();
         calculateAndRender();
         updateAutoFields();
+        populateAidPeriodSelect();
+        renderAidsList();
     }
 
     function openSettingsFromHeader() {
@@ -453,21 +474,23 @@
         safeSetItem('solar_data_cloud_v1', JSON.stringify(appData));
         safeSetItem('solar_invest_cloud_v1', appInvest);
         safeSetItem('solar_ref_kwh_cloud_v1', refKwh);
+        safeSetItem('solar_aids_v1', JSON.stringify(oneTimeAids));
     }
 
     function resetToDefault() {
         if(confirm("Réinitialiser les données ?")) {
-            safeClear(); appData = [...defaultData]; appInvest = 14430.00; refKwh = 10225;
+            safeClear(); appData = [...defaultData]; appInvest = 14430.00; refKwh = 10225; oneTimeAids = [];
             document.getElementById('config-invest').value = "14430.00";
             document.getElementById('config-ref-kwh').value = "10225";
             initSaisieTab(); calculateAndRender(); updateAutoFields();
+            populateAidPeriodSelect(); renderAidsList();
         }
     }
 
     function saveRow(event) {
         const evtTarget = event || window.event;
         if (evtTarget && evtTarget.preventDefault) evtTarget.preventDefault();
-        
+
         const specs = getNextPeriodSpecs();
         const facture = parseFloat(document.getElementById('form-facture').value) || 0;
         const kwh = parseInt(document.getElementById('form-kwh').value) || 0;
@@ -476,18 +499,60 @@
         const newRow = { date: specs.date, detail: specs.detail, facture, kwh, revente };
         appData = appData.filter(r => r.date !== newRow.date); appData.push(newRow);
         saveAllToLocalStorage(); document.getElementById('dataForm').reset();
-        initSaisieTab(); updateAutoFields(); alert(`Données ajoutées !`);
+        initSaisieTab(); updateAutoFields(); populateAidPeriodSelect(); alert(`Données ajoutées !`);
     }
 
     function deleteRow(date) {
         if(confirm(`Supprimer la période ${date} ?`)) {
             appData = appData.filter(r => r.date !== date); saveAllToLocalStorage();
-            initSaisieTab(); updateAutoFields();
+            initSaisieTab(); updateAutoFields(); populateAidPeriodSelect();
         }
     }
 
+    function populateAidPeriodSelect() {
+        const select = document.getElementById('aid-period');
+        if (!select) return;
+        const currentValue = select.value;
+        select.innerHTML = appData.map(r => `<option value="${r.date}">${r.date}</option>`).join('');
+        if (appData.some(r => r.date === currentValue)) select.value = currentValue;
+        else if (appData.length > 0) select.value = appData[appData.length - 1].date;
+    }
+
+    function addOneTimeAid() {
+        const amount = parseFloat(document.getElementById('aid-amount').value) || 0;
+        const period = document.getElementById('aid-period').value;
+        if (!amount || !period) { alert("Renseignez un montant et une période."); return; }
+        oneTimeAids.push({ date: period, montant: amount });
+        saveAllToLocalStorage();
+        document.getElementById('aid-amount').value = '';
+        renderAidsList();
+        calculateAndRender();
+    }
+
+    function deleteAid(index) {
+        oneTimeAids.splice(index, 1);
+        saveAllToLocalStorage();
+        renderAidsList();
+        calculateAndRender();
+    }
+
+    function renderAidsList() {
+        const container = document.getElementById('aidsList');
+        if (!container) return;
+        if (oneTimeAids.length === 0) {
+            container.innerHTML = `<p style="font-size: 12px; color: var(--text-muted);">Aucune aide ponctuelle enregistrée.</p>`;
+            return;
+        }
+        container.innerHTML = oneTimeAids.map((aid, i) => `
+            <div class="sim-row">
+                <span>${aid.date} : <strong style="color: #fbbf24;">${aid.montant.toFixed(2)} €</strong></span>
+                <button class="btn-danger-item" style="width: auto;" onclick="deleteAid(${i})">Supprimer</button>
+            </div>
+        `).join('');
+    }
+
     function exportDataToFile() {
-        const packageData = { version: "1.0", exportDate: new Date().toISOString(), appInvest, refKwh, appData };
+        const packageData = { version: "1.0", exportDate: new Date().toISOString(), appInvest, refKwh, appData, oneTimeAids };
         const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(packageData, null, 2));
         const downloadAnchor = document.createElement('a'); downloadAnchor.setAttribute("href", dataStr);
         downloadAnchor.setAttribute("download", "sauvegarde-suivi-solaire.json");
@@ -496,7 +561,7 @@
 
     const CO2_KG_PAR_KWH = 0.056;
 
-    function processRowCalculations(row, isReferencePeriod) {
+    function processRowCalculations(row, isReferencePeriod, aideAmount = 0) {
         const tarif = row.kwh > 0 ? (row.facture / row.kwh) : 0;
         let economies = 0;
         let kwhEconomises = 0;
@@ -505,8 +570,10 @@
             economies = kwhEconomises * tarif;
         }
         if(row.date === "juin-24" && row.facture === 2309.18) { economies = 80.15; }
+        // L'aide ponctuelle est déjà comprise dans row.revente : elle n'est pas ré-ajoutée ici,
+        // elle sert uniquement à l'exclure du gain récurrent utilisé pour les projections.
         const gainsAnnuels = economies + row.revente;
-        return { ...row, tarif, economies, kwhEconomises, gainsAnnuels };
+        return { ...row, tarif, economies, kwhEconomises, aide: aideAmount, gainsAnnuels };
     }
 
     function initSaisieTab() {
@@ -531,12 +598,17 @@
         const kpiInv = document.getElementById('kpi-invest');
         if (kpiInv) kpiInv.innerText = Math.round(appInvest).toLocaleString('fr-FR') + " €";
         
-        let processedRealRows = appData.map(row => processRowCalculations(row, row.date === "juin-23"));
+        const aidesParPeriode = {};
+        oneTimeAids.forEach(aid => { aidesParPeriode[aid.date] = (aidesParPeriode[aid.date] || 0) + aid.montant; });
 
-        let derniereAnneeGains = 1805.20; 
-        if(processedRealRows.length > 0) {
-            let lastReal = processedRealRows[processedRealRows.length - 1];
-            if(lastReal.gainsAnnuels > 0) derniereAnneeGains = lastReal.gainsAnnuels;
+        let processedRealRows = appData.map(row => processRowCalculations(row, row.date === "juin-23", aidesParPeriode[row.date] || 0));
+
+        let lastRealRow = processedRealRows.length > 0 ? processedRealRows[processedRealRows.length - 1] : null;
+
+        let derniereAnneeGains = 1805.20;
+        if(lastRealRow) {
+            let gainRecurrent = lastRealRow.gainsAnnuels - lastRealRow.aide;
+            if(gainRecurrent > 0) derniereAnneeGains = gainRecurrent;
         }
 
         let totalGainsReels = processedRealRows.reduce((acc, r) => acc + r.gainsAnnuels, 0);
@@ -585,10 +657,12 @@
         
         let indexProjection = 1;
         let referenceLastRow = appData[appData.length - 1] || { facture: 1869.64, kwh: 7375, revente: 1082.70 };
+        // Le surplus revente projeté exclut la part d'aide ponctuelle pour ne pas la reconduire chaque année.
+        let projectedRevente = lastRealRow ? Math.max(0, derniereAnneeGains - lastRealRow.economies) : referenceLastRow.revente;
 
         while(simulatedRenta > 0 && indexProjection <= 8) {
             lastDateYear++; simulatedRenta -= derniereAnneeGains;
-            let simulatedRow = { date: `juin-${lastDateYear}`, detail: `+${indexProjection}a`, facture: referenceLastRow.facture, kwh: referenceLastRow.kwh, revente: referenceLastRow.revente };
+            let simulatedRow = { date: `juin-${lastDateYear}`, detail: `+${indexProjection}a`, facture: referenceLastRow.facture, kwh: referenceLastRow.kwh, revente: projectedRevente };
             fullDashboardData.push({ ...processRowCalculations(simulatedRow, false), isReal: false });
             indexProjection++;
         }
@@ -610,6 +684,7 @@
                 <div class="compare-row-top">
                     <span class="compare-date">${colData.date}</span>
                     <span class="badge ${colData.isReal ? 'real' : 'proj'}">${colData.detail}</span>
+                    ${colData.aide > 0 ? `<span class="badge aid" title="Inclut ${colData.aide.toFixed(0)} € d'aide ponctuelle">🎁 aide</span>` : ''}
                     <span class="compare-gain">+${colData.gainsAnnuels.toFixed(0)} €</span>
                 </div>
                 <div class="compare-bar-track"><div class="compare-bar-fill" style="width:${pct}%"></div></div>
