@@ -52,14 +52,6 @@
   h1 { font-size: 22px; font-weight: 700; letter-spacing: -0.5px; }
   .subtitle { color: var(--text-muted); font-size: 12px; margin-top: 4px; }
 
-  /* --- ACCUEIL --- */
-  #welcome-screen { display: flex; flex-direction: column; justify-content: center; align-items: center; min-height: 75vh; }
-  .welcome-card { width: 100%; text-align: center; padding: 30px 20px; }
-  .welcome-card h2 { margin-bottom: 10px; font-size: 18px; font-weight: 700; }
-  .welcome-card p { color: var(--text-muted); font-size: 13px; margin-bottom: 20px; }
-  .secondary-option { margin-top: 24px; text-align: center; }
-  .btn-link { background: none; border: none; color: var(--text-muted); font-size: 12px; text-decoration: underline; cursor: pointer; padding: 8px; }
-
   /* --- ÉLÉMENTS VERRE --- */
   .card {
     background: var(--glass-bg);
@@ -125,7 +117,6 @@
   .tab-btn { flex: 1; padding: 8px 2px; border: none; background: transparent; color: var(--text-muted); font-weight: 500; font-size: 12px; border-radius: 8px; cursor: pointer; transition: all 0.2s; }
   .tab-btn.active { background: rgba(255, 255, 255, 0.12); color: #fff; font-weight: 600; backdrop-filter: blur(5px); -webkit-backdrop-filter: blur(5px); }
   
-  #main-application { display: none; }
   .tab-content { display: none; }
   .tab-content.active { display: block; }
 
@@ -162,24 +153,6 @@
 <body>
 
 <div class="container">
-
-    <div id="welcome-screen">
-        <div class="card welcome-card">
-            <h2>Suivi Énergie Solaire</h2>
-            <p>Chargez votre fichier pour actualiser vos graphiques de rentabilité.</p>
-            <div class="row" style="margin-top: 10px; display: block;">
-                <input type="file" id="welcomeImportFile" accept=".json" onchange="importFromWelcome(event)" style="display: none;">
-                <button class="btn-blue" onclick="document.getElementById('welcomeImportFile').click()">
-                    📂 Charger une sauvegarde (iCloud Drive)
-                </button>
-            </div>
-        </div>
-        <div class="secondary-option">
-            <button class="btn-link" onclick="bypassToLocalData()">
-                Standard : Utiliser les données de l'iPhone ➔
-            </button>
-        </div>
-    </div>
 
     <div id="main-application">
         <header>
@@ -283,7 +256,15 @@
                     Exportez votre fichier pour le placer dans votre répertoire <b>Fichiers</b> ou iCloud Drive.
                 </p>
                 <button class="btn-blue" onclick="exportDataToFile()">
-                    💾 Sauvegarder le fichier JSON
+                    💾 Exporter le fichier JSON
+                </button>
+                <hr class="divider">
+                <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 12px;">
+                    Importez une sauvegarde précédemment exportée pour restaurer vos données.
+                </p>
+                <input type="file" id="importFile" accept=".json" onchange="importDataFromFile(event)" style="display: none;">
+                <button class="btn-gray" onclick="document.getElementById('importFile').click()">
+                    📂 Importer une sauvegarde
                 </button>
             </div>
 
@@ -323,7 +304,7 @@
     let roiChartInstance = null;
     let breakdownChartInstance = null;
 
-    function bypassToLocalData() {
+    function loadLocalData() {
         const localStoreData = safeGetItem('solar_data_cloud_v1');
         if(localStoreData) {
             try {
@@ -335,7 +316,7 @@
         launchApplication();
     }
 
-    function importFromWelcome(event) {
+    function importDataFromFile(event) {
         const evtTarget = event || window.event;
         const file = evtTarget.target.files[0];
         if (!file) return;
@@ -348,16 +329,18 @@
                     appInvest = parsed.appInvest;
                     refKwh = parsed.refKwh;
                     saveAllToLocalStorage();
-                    launchApplication();
+                    initSaisieTab();
+                    calculateAndRender();
+                    updateAutoFields();
+                    alert("Données importées avec succès !");
                 } else { alert("Fichier invalide."); }
             } catch (err) { alert("Erreur lors de la lecture."); }
         };
         reader.readAsText(file);
+        evtTarget.target.value = '';
     }
 
     function launchApplication() {
-        document.getElementById('welcome-screen').style.display = 'none';
-        document.getElementById('main-application').style.display = 'block';
         initSaisieTab();
         calculateAndRender();
         updateAutoFields();
@@ -711,6 +694,8 @@
             } catch(e) { console.error("Erreur chart", e); }
         }
     }
+
+    loadLocalData();
 </script>
 
 </body>
