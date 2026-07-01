@@ -32,20 +32,19 @@
   }
   
   html {
-    min-height: 100%;
+    height: 100%;
     background-color: #000;
     background-image: radial-gradient(circle at 50% -20%, #1e1b4b 0%, #000 70%);
+    background-attachment: fixed;
     overscroll-behavior-y: none;
   }
 
   body {
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-    background-color: #000;
-    background-image: radial-gradient(circle at 50% -20%, #1e1b4b 0%, #000 70%);
     color: var(--text-main);
     margin: 0;
     padding: calc(45px + env(safe-area-inset-top)) 16px calc(30px + env(safe-area-inset-bottom));
-    min-height: 100vh;
+    min-height: 100%;
     overscroll-behavior-y: none;
     font-size: 14px;
     line-height: 1.4;
@@ -659,8 +658,6 @@
             economies = kwhEconomises * tarif;
         }
         if(row.date === "juin-24" && row.facture === 2309.18) { economies = 80.15; }
-        // L'aide ponctuelle est déjà comprise dans row.revente : elle n'est pas ré-ajoutée ici,
-        // elle sert uniquement à l'exclure du gain récurrent utilisé pour les projections.
         const gainsAnnuels = economies + row.revente;
         return { ...row, tarif, economies, kwhEconomises, aide: aideAmount, gainsAnnuels };
     }
@@ -752,7 +749,6 @@
         
         let indexProjection = 1;
         let referenceLastRow = appData[appData.length - 1] || { facture: 1869.64, kwh: 7375, revente: 1082.70 };
-        // Le surplus revente projeté exclut la part d'aide ponctuelle pour ne pas la reconduire chaque année.
         let projectedRevente = lastRealRow ? Math.max(0, derniereAnneeGains - lastRealRow.economies) : referenceLastRow.revente;
 
         while(simulatedRenta > 0 && indexProjection <= 8) {
@@ -795,7 +791,6 @@
                 </div>
             `;
 
-            // Années complétées + 1 année de prévision affichées d'office ; le reste des projections est repliable.
             if (colData.isReal || projectedSeen === 1) {
                 compareContainer.appendChild(row);
             } else if (compareExtraContainer) {
@@ -846,7 +841,6 @@
                                     borderColor: lineGradient, 
                                     borderWidth: 2.5,
                                     pointRadius: 4, 
-                                    // AJUSTEMENT : Fond des points calqué sur le dégradé de la ligne
                                     pointBackgroundColor: lineGradient,
                                     pointBorderColor: '#0b0f19',
                                     pointBorderWidth: 1.5,
