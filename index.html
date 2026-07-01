@@ -48,17 +48,17 @@
 
   .container { max-width: 600px; margin: 0 auto; }
   
-  header { margin-bottom: 20px; text-align: center; }
-  h1 { font-size: 22px; font-weight: 700; letter-spacing: -0.5px; }
-  .subtitle { color: var(--text-muted); font-size: 12px; margin-top: 4px; }
+  header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding-top: 4px; }
+  h1 { font-size: 22px; font-weight: 700; letter-spacing: -0.5px; text-align: left; }
+  .subtitle { color: var(--text-muted); font-size: 12px; margin-top: 4px; text-align: left; }
 
-  /* --- ACCUEIL --- */
-  #welcome-screen { display: flex; flex-direction: column; justify-content: center; align-items: center; min-height: 75vh; }
-  .welcome-card { width: 100%; text-align: center; padding: 30px 20px; }
-  .welcome-card h2 { margin-bottom: 10px; font-size: 18px; font-weight: 700; }
-  .welcome-card p { color: var(--text-muted); font-size: 13px; margin-bottom: 20px; }
-  .secondary-option { margin-top: 24px; text-align: center; }
-  .btn-link { background: none; border: none; color: var(--text-muted); font-size: 12px; text-decoration: underline; cursor: pointer; padding: 8px; }
+  .header-icon-btn {
+    flex-shrink: 0; width: 40px; height: 40px; padding: 0;
+    display: flex; align-items: center; justify-content: center;
+    border-radius: 50%; font-size: 17px;
+    background: var(--glass-bg); border: var(--glass-border);
+    backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+  }
 
   /* --- ÉLÉMENTS VERRE --- */
   .card {
@@ -73,31 +73,40 @@
 
   .card h2 { margin: 0 0 12px; font-size: 11px; color: var(--text-muted); font-weight: 700; text-transform: uppercase; letter-spacing: 1px; }
 
-  /* --- SECTION KPI - AJUSTEMENT TEXTE ET FLEX --- */
-  .renta-summary { display: flex; flex-direction: column; gap: 8px; margin-bottom: 14px; }
-  .renta-values { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; }
-  .renta-total { font-size: 24px; font-weight: 700; color: var(--neon-blue); letter-spacing: -1px; }
-  .renta-target { font-size: 12px; color: var(--text-muted); font-weight: 500; }
-  
-  .renta-gauge-bar {
-    position: relative;
-    height: 12px;
-    background: rgba(255, 255, 255, 0.08);
-    border-radius: 6px;
-    overflow: hidden;
-    border: 1px solid rgba(255, 255, 255, 0.04);
+  /* --- CARTES TEINTÉES --- */
+  .kpi-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 14px; }
+  .card-tint-green { background: linear-gradient(160deg, rgba(74,222,128,0.16), rgba(11,15,25,0.55)); border-color: rgba(74,222,128,0.22); }
+  .card-tint-red { background: linear-gradient(160deg, rgba(244,63,94,0.16), rgba(11,15,25,0.55)); border-color: rgba(244,63,94,0.22); }
+  .card-tint-blue { background: linear-gradient(160deg, rgba(56,189,248,0.16), rgba(11,15,25,0.55)); border-color: rgba(56,189,248,0.22); }
+  .card-tint-purple { background: linear-gradient(160deg, rgba(167,139,250,0.16), rgba(11,15,25,0.55)); border-color: rgba(167,139,250,0.22); }
+  .card-tint-amber { background: linear-gradient(160deg, rgba(251,191,36,0.16), rgba(11,15,25,0.55)); border-color: rgba(251,191,36,0.22); }
+  .card-tint-teal { background: linear-gradient(160deg, rgba(45,212,191,0.16), rgba(11,15,25,0.55)); border-color: rgba(45,212,191,0.22); }
+
+  .kpi-value { font-size: 26px; font-weight: 700; letter-spacing: -0.5px; }
+  .kpi-value.green { color: var(--neon-green); }
+  .kpi-value.red { color: var(--neon-red); }
+  .kpi-value.blue { color: var(--neon-blue); }
+  .kpi-value.amber { color: #fbbf24; }
+  .kpi-value.teal { color: #2dd4bf; }
+  .kpi-note { font-size: 11px; color: var(--text-muted); margin-top: 6px; }
+
+  /* --- CARTES "ICÔNE + CONTENU" (style CO2) --- */
+  .icon-card { display: flex; align-items: center; gap: 12px; }
+  .icon-card-icon {
+    flex-shrink: 0; font-size: 26px; line-height: 1; width: 44px; height: 44px;
+    display: flex; align-items: center; justify-content: center;
+    border-radius: 12px; background: rgba(255, 255, 255, 0.06);
   }
-  .renta-gauge-fill {
-    height: 100%;
-    border-radius: 6px;
-    background: linear-gradient(to right, var(--neon-blue), var(--neon-green));
-    width: 0%;
-    transition: width 0.8s ease-out;
+  .icon-card-body { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+  .icon-card-body h2 { margin-bottom: 4px; }
+  .icon-card.kpi-card .kpi-value { font-size: 21px; }
+
+  .progress-track {
+    position: relative; height: 10px; border-radius: 6px; overflow: hidden;
+    background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.04); margin: 10px 0 8px;
   }
-  
-  .renta-sub-stats { display: flex; justify-content: space-between; font-size: 12px; color: var(--text-muted); margin-top: 4px; }
-  .renta-reste { color: var(--neon-red); font-weight: 600; }
-  .renta-deadline { color: var(--neon-blue); font-weight: 600; }
+  .progress-fill { height: 100%; border-radius: 6px; background: linear-gradient(to right, var(--neon-purple), var(--neon-blue)); width: 0%; transition: width 0.8s ease-out; }
+  .progress-scale { display: flex; justify-content: space-between; font-size: 10px; color: var(--text-muted); }
 
   /* FORMULAIRE & SAISIE */
   .row { display: flex; flex-direction: column; gap: 4px; margin-bottom: 12px; text-align: left; }
@@ -125,107 +134,131 @@
   .tab-btn { flex: 1; padding: 8px 2px; border: none; background: transparent; color: var(--text-muted); font-weight: 500; font-size: 12px; border-radius: 8px; cursor: pointer; transition: all 0.2s; }
   .tab-btn.active { background: rgba(255, 255, 255, 0.12); color: #fff; font-weight: 600; backdrop-filter: blur(5px); -webkit-backdrop-filter: blur(5px); }
   
-  #main-application { display: none; }
   .tab-content { display: none; }
   .tab-content.active { display: block; }
 
-  /* TABLES COMPACTES */
   .badge { display: inline-block; padding: 2px 6px; border-radius: 4px; font-size: 9px; font-weight: 700; text-transform: uppercase; }
   .badge.real { background: rgba(74, 222, 128, 0.15); color: var(--neon-green); }
   .badge.proj { background: rgba(255, 255, 255, 0.08); color: #e2e8f0; border: 1px solid rgba(255, 255, 255, 0.05); }
-  .proj-col { color: var(--text-muted) !important; font-style: italic; }
-
-  .table-container { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; border-radius: 12px; }
-  table.transposed-table { width: max-content; min-width: 100%; border-collapse: collapse; font-size: 11px; }
-  
-  table.transposed-table td.row-header { 
-    background-color: #0b0f19 !important;
-    color: var(--text-muted); 
-    font-weight: 600; 
-    position: sticky; 
-    left: 0; 
-    z-index: 10; 
-    width: 105px;
-    min-width: 105px;
-    border-right: 1.5px solid rgba(255, 255, 255, 0.1); 
-    text-align: left;
-    padding-left: 6px;
-  }
-
-  table.transposed-table td, table.transposed-table th { padding: 6px 8px; border-bottom: 1px solid rgba(255, 255, 255, 0.04); border-right: 1px solid rgba(255, 255, 255, 0.01); text-align: center; }
-  table.transposed-table tr.years-header th { background: rgba(0, 0, 0, 0.3); color: #fff; font-weight: 700; }
-  table.transposed-table tr.years-header td.row-header { background-color: #0b0f19 !important; color: #fff; }
+  .badge.aid { background: rgba(251, 191, 36, 0.15); color: #fbbf24; }
 
   .btn-danger-item { background: transparent; color: var(--neon-red); width: auto; padding: 4px 8px; font-size: 11px; border-radius: 6px; border: 1px solid rgba(244,63,94,0.2); font-weight: 500; }
+
+  /* --- COMPARATIF DES GAINS PAR PÉRIODE (liste à barres) --- */
+  .compare-list { display: flex; flex-direction: column; gap: 10px; }
+  .compare-row { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.07); border-radius: 12px; padding: 10px 12px; }
+  .compare-row.proj { border-style: dashed; opacity: 0.75; }
+  .compare-row-top { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+  .compare-date { font-weight: 700; font-size: 13px; width: 58px; flex-shrink: 0; }
+  .compare-gain { margin-left: auto; color: var(--neon-green); font-weight: 700; font-size: 13px; }
+  .compare-bar-track { height: 8px; border-radius: 5px; background: rgba(255,255,255,0.06); overflow: hidden; margin-bottom: 6px; }
+  .compare-bar-fill { height: 100%; border-radius: 5px; background: linear-gradient(to right, #38bdf8, #4ade80); }
+  .compare-row.proj .compare-bar-fill { background: rgba(255,255,255,0.18); }
+  .compare-row-bottom { display: flex; justify-content: space-between; font-size: 10.5px; color: var(--text-muted); }
+  .compare-reste { color: var(--neon-red); font-weight: 600; }
+  .compare-row.proj .compare-reste { color: var(--text-muted); }
 </style>
 </head>
 <body>
 
 <div class="container">
 
-    <div id="welcome-screen">
-        <div class="card welcome-card">
-            <h2>Suivi Énergie Solaire</h2>
-            <p>Chargez votre fichier pour actualiser vos graphiques de rentabilité.</p>
-            <div class="row" style="margin-top: 10px; display: block;">
-                <input type="file" id="welcomeImportFile" accept=".json" onchange="importFromWelcome(event)" style="display: none;">
-                <button class="btn-blue" onclick="document.getElementById('welcomeImportFile').click()">
-                    📂 Charger une sauvegarde (iCloud Drive)
-                </button>
-            </div>
-        </div>
-        <div class="secondary-option">
-            <button class="btn-link" onclick="bypassToLocalData()">
-                Standard : Utiliser les données de l'iPhone ➔
-            </button>
-        </div>
-    </div>
-
     <div id="main-application">
         <header>
-            <h1>☀️ Amortissement Solaire</h1>
-            <div class="subtitle">Glissez horizontalement pour parcourir les années</div>
+            <div>
+                <h1>☀️ Amortissement Solaire</h1>
+                <p class="subtitle">Glissez horizontalement pour parcourir les années</p>
+            </div>
+            <button class="header-icon-btn" onclick="openSettingsFromHeader()" aria-label="Réglages">⚙️</button>
         </header>
 
         <div class="tabs">
             <button class="tab-btn active" onclick="openTab(event, 'graphiques')">📊 Rendement</button>
             <button class="tab-btn" onclick="openTab(event, 'saisie')">✍️ Saisie</button>
-            <button class="tab-btn" onclick="openTab(event, 'config')">⚙️ Paramètres</button>
+            <button class="tab-btn" id="tab-btn-config" onclick="openTab(event, 'config')">⚙️ Paramètres</button>
         </div>
 
         <div id="graphiques" class="tab-content active">
-            <div class="card rents-summary-card">
-                <h2>Bilan d'Amortissement Global</h2>
-                <div class="renta-summary">
-                    <div class="renta-values">
-                        <div class="renta-total" id="kpi-gains">0 €</div>
-                        <div class="renta-target" id="kpi-invest">Valeur de l'investissement : 0 €</div>
+            <div class="card card-tint-purple icon-card kpi-card hero-card">
+                <div class="icon-card-icon">☀️</div>
+                <div class="icon-card-body">
+                    <h2>Investissement Solaire</h2>
+                    <div class="kpi-value" style="color: var(--neon-purple);" id="kpi-invest">0 €</div>
+                    <div class="kpi-note">Coût initial de l'installation</div>
+                </div>
+            </div>
+
+            <div class="kpi-grid">
+                <div class="card card-tint-green icon-card kpi-card">
+                    <div class="icon-card-icon">💰</div>
+                    <div class="icon-card-body">
+                        <h2>Gains Cumulés</h2>
+                        <div class="kpi-value green" id="kpi-gains">0 €</div>
+                        <div class="kpi-note">Économies + revente</div>
                     </div>
-                    <div class="renta-gauge-bar">
-                        <div class="renta-gauge-fill" id="kpi-gauge"></div>
-                    </div>
-                    <div class="renta-sub-stats">
-                        <div>Reste dû : <strong class="renta-reste" id="kpi-rest">0 €</strong></div>
-                        <div>Point mort estimé : <strong class="renta-deadline" id="kpi-years">...</strong></div>
+                </div>
+                <div class="card card-tint-red icon-card kpi-card">
+                    <div class="icon-card-icon">⏳</div>
+                    <div class="icon-card-body">
+                        <h2>Reste Dû</h2>
+                        <div class="kpi-value red" id="kpi-rest">0 €</div>
+                        <div class="kpi-note">Sur investissement</div>
                     </div>
                 </div>
             </div>
 
-            <div class="card graphs-card">
+            <div class="card card-tint-purple">
+                <h2>🎯 Progression vers le Point Mort</h2>
+                <div class="progress-track"><div class="progress-fill" id="kpi-gauge"></div></div>
+                <div class="progress-scale">
+                    <span>0 €</span>
+                    <span>Estimé : <strong style="color: var(--neon-blue);" id="kpi-years">...</strong></span>
+                </div>
+            </div>
+
+            <div class="kpi-grid">
+                <div class="card card-tint-blue icon-card kpi-card">
+                    <div class="icon-card-icon">⚡</div>
+                    <div class="icon-card-body">
+                        <h2>Tarif Moyen</h2>
+                        <div class="kpi-value blue" id="kpi-tarif">0.00 €</div>
+                        <div class="kpi-note" id="kpi-tarif-note">par kWh</div>
+                    </div>
+                </div>
+                <div class="card card-tint-amber icon-card kpi-card">
+                    <div class="icon-card-icon">🗓️</div>
+                    <div class="icon-card-body">
+                        <h2>Économie Mensuelle</h2>
+                        <div class="kpi-value amber" id="kpi-eco-mensuelle">0 €</div>
+                        <div class="kpi-note">Moy. dernière année</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card card-tint-teal icon-card">
+                <div class="icon-card-icon">🌱</div>
+                <div class="icon-card-body">
+                    <h2>CO2 Évité (estimation)</h2>
+                    <div class="kpi-value teal" id="kpi-co2">0 kg</div>
+                    <div class="kpi-note">Basé sur le kWh économisé et le mix électrique moyen français (~56 g/kWh)</div>
+                </div>
+            </div>
+
+            <div class="card graphs-card card-tint-blue">
                 <h2>📉 Trajectoire du Point Mort</h2>
                 <div style="position: relative; height:180px;"><canvas id="roiChart"></canvas></div>
             </div>
-            
-            <div class="card graphs-card">
+
+            <div class="card graphs-card card-tint-green">
                 <h2>⚡ Facture vs Économies Réelles</h2>
                 <div style="position: relative; height:180px;"><canvas id="breakdownChart"></canvas></div>
             </div>
 
-            <div class="card summary-card">
-                <h2>📋 Synthèse Évolutive Chronologique (Compacte)</h2>
-                <div class="table-container">
-                    <table id="summaryTable" class="transposed-table"></table>
-                </div>
+            <div class="card summary-card card-tint-blue">
+                <h2>📊 Comparatif des Gains par Période</h2>
+                <div style="position: relative; height:140px;"><canvas id="gainCompareChart"></canvas></div>
+                <hr class="divider">
+                <div id="summaryCompare" class="compare-list"></div>
             </div>
         </div>
 
@@ -283,7 +316,15 @@
                     Exportez votre fichier pour le placer dans votre répertoire <b>Fichiers</b> ou iCloud Drive.
                 </p>
                 <button class="btn-blue" onclick="exportDataToFile()">
-                    💾 Sauvegarder le fichier JSON
+                    💾 Exporter le fichier JSON
+                </button>
+                <hr class="divider">
+                <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 12px;">
+                    Importez une sauvegarde précédemment exportée pour restaurer vos données.
+                </p>
+                <input type="file" id="importFile" accept=".json" onchange="importDataFromFile(event)" style="display: none;">
+                <button class="btn-gray" onclick="document.getElementById('importFile').click()">
+                    📂 Importer une sauvegarde
                 </button>
             </div>
 
@@ -300,6 +341,21 @@
                 <button class="btn-blue" onclick="saveConfig()" style="margin-top: 8px;">Appliquer les modifications</button>
                 <hr class="divider">
                 <button class="btn-gray" onclick="resetToDefault()">Réinitialiser d'origine</button>
+            </div>
+
+            <div class="card card-tint-amber config-aids-card">
+                <h2>🎁 Aides Ponctuelles</h2>
+                <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 12px;">
+                    Primes ou aides one-shot (ex : aide à l'autoconsommation) déjà comprises dans une revente saisie. Comptées dans vos gains réels, mais exclues du calcul des années projetées pour ne pas fausser les estimations.
+                </p>
+                <div class="sim-row" style="flex-wrap: wrap; gap: 6px; border-bottom: none; padding-bottom: 0;">
+                    <span>Aide de</span>
+                    <input type="number" step="0.01" id="aid-amount" placeholder="1000" style="width: 90px; padding: 8px; background-color: var(--input-bg); border: 1px solid rgba(255,255,255,0.05); border-radius: 8px; color: #fff; font-size: 13px;">
+                    <span>€ reçue pour la période de</span>
+                    <select id="aid-period" style="padding: 8px; background-color: var(--input-bg); border: 1px solid rgba(255,255,255,0.05); border-radius: 8px; color: #fff; font-size: 13px;"></select>
+                </div>
+                <button class="btn-blue" onclick="addOneTimeAid()" style="margin-top: 10px;">Ajouter l'aide</button>
+                <div id="aidsList" style="margin-top: 10px;"></div>
             </div>
         </div>
     </div>
@@ -319,23 +375,26 @@
     let appData = [...defaultData];
     let appInvest = 14430.00;
     let refKwh = 10225;
+    let oneTimeAids = [];
 
     let roiChartInstance = null;
     let breakdownChartInstance = null;
+    let gainCompareChartInstance = null;
 
-    function bypassToLocalData() {
+    function loadLocalData() {
         const localStoreData = safeGetItem('solar_data_cloud_v1');
         if(localStoreData) {
             try {
                 appData = JSON.parse(localStoreData);
                 appInvest = parseFloat(safeGetItem('solar_invest_cloud_v1')) || 14430.00;
                 refKwh = parseInt(safeGetItem('solar_ref_kwh_cloud_v1')) || 10225;
+                oneTimeAids = JSON.parse(safeGetItem('solar_aids_v1')) || [];
             } catch(e) {}
         }
         launchApplication();
     }
 
-    function importFromWelcome(event) {
+    function importDataFromFile(event) {
         const evtTarget = event || window.event;
         const file = evtTarget.target.files[0];
         if (!file) return;
@@ -347,20 +406,29 @@
                     appData = parsed.appData;
                     appInvest = parsed.appInvest;
                     refKwh = parsed.refKwh;
+                    oneTimeAids = parsed.oneTimeAids || [];
                     saveAllToLocalStorage();
-                    launchApplication();
+                    initSaisieTab();
+                    calculateAndRender();
+                    updateAutoFields();
+                    alert("Données importées avec succès !");
                 } else { alert("Fichier invalide."); }
             } catch (err) { alert("Erreur lors de la lecture."); }
         };
         reader.readAsText(file);
+        evtTarget.target.value = '';
     }
 
     function launchApplication() {
-        document.getElementById('welcome-screen').style.display = 'none';
-        document.getElementById('main-application').style.display = 'block';
         initSaisieTab();
         calculateAndRender();
         updateAutoFields();
+        populateAidPeriodSelect();
+        renderAidsList();
+    }
+
+    function openSettingsFromHeader() {
+        openTab({ currentTarget: document.getElementById('tab-btn-config') }, 'config');
     }
 
     function openTab(event, tabId) {
@@ -406,21 +474,23 @@
         safeSetItem('solar_data_cloud_v1', JSON.stringify(appData));
         safeSetItem('solar_invest_cloud_v1', appInvest);
         safeSetItem('solar_ref_kwh_cloud_v1', refKwh);
+        safeSetItem('solar_aids_v1', JSON.stringify(oneTimeAids));
     }
 
     function resetToDefault() {
         if(confirm("Réinitialiser les données ?")) {
-            safeClear(); appData = [...defaultData]; appInvest = 14430.00; refKwh = 10225;
+            safeClear(); appData = [...defaultData]; appInvest = 14430.00; refKwh = 10225; oneTimeAids = [];
             document.getElementById('config-invest').value = "14430.00";
             document.getElementById('config-ref-kwh').value = "10225";
             initSaisieTab(); calculateAndRender(); updateAutoFields();
+            populateAidPeriodSelect(); renderAidsList();
         }
     }
 
     function saveRow(event) {
         const evtTarget = event || window.event;
         if (evtTarget && evtTarget.preventDefault) evtTarget.preventDefault();
-        
+
         const specs = getNextPeriodSpecs();
         const facture = parseFloat(document.getElementById('form-facture').value) || 0;
         const kwh = parseInt(document.getElementById('form-kwh').value) || 0;
@@ -429,31 +499,81 @@
         const newRow = { date: specs.date, detail: specs.detail, facture, kwh, revente };
         appData = appData.filter(r => r.date !== newRow.date); appData.push(newRow);
         saveAllToLocalStorage(); document.getElementById('dataForm').reset();
-        initSaisieTab(); updateAutoFields(); alert(`Données ajoutées !`);
+        initSaisieTab(); updateAutoFields(); populateAidPeriodSelect(); alert(`Données ajoutées !`);
     }
 
     function deleteRow(date) {
         if(confirm(`Supprimer la période ${date} ?`)) {
             appData = appData.filter(r => r.date !== date); saveAllToLocalStorage();
-            initSaisieTab(); updateAutoFields();
+            initSaisieTab(); updateAutoFields(); populateAidPeriodSelect();
         }
     }
 
+    function populateAidPeriodSelect() {
+        const select = document.getElementById('aid-period');
+        if (!select) return;
+        const currentValue = select.value;
+        select.innerHTML = appData.map(r => `<option value="${r.date}">${r.date}</option>`).join('');
+        if (appData.some(r => r.date === currentValue)) select.value = currentValue;
+        else if (appData.length > 0) select.value = appData[appData.length - 1].date;
+    }
+
+    function addOneTimeAid() {
+        const amount = parseFloat(document.getElementById('aid-amount').value) || 0;
+        const period = document.getElementById('aid-period').value;
+        if (!amount || !period) { alert("Renseignez un montant et une période."); return; }
+        oneTimeAids.push({ date: period, montant: amount });
+        saveAllToLocalStorage();
+        document.getElementById('aid-amount').value = '';
+        renderAidsList();
+        calculateAndRender();
+    }
+
+    function deleteAid(index) {
+        oneTimeAids.splice(index, 1);
+        saveAllToLocalStorage();
+        renderAidsList();
+        calculateAndRender();
+    }
+
+    function renderAidsList() {
+        const container = document.getElementById('aidsList');
+        if (!container) return;
+        if (oneTimeAids.length === 0) {
+            container.innerHTML = `<p style="font-size: 12px; color: var(--text-muted);">Aucune aide ponctuelle enregistrée.</p>`;
+            return;
+        }
+        container.innerHTML = oneTimeAids.map((aid, i) => `
+            <div class="sim-row">
+                <span>${aid.date} : <strong style="color: #fbbf24;">${aid.montant.toFixed(2)} €</strong></span>
+                <button class="btn-danger-item" style="width: auto;" onclick="deleteAid(${i})">Supprimer</button>
+            </div>
+        `).join('');
+    }
+
     function exportDataToFile() {
-        const packageData = { version: "1.0", exportDate: new Date().toISOString(), appInvest, refKwh, appData };
+        const packageData = { version: "1.0", exportDate: new Date().toISOString(), appInvest, refKwh, appData, oneTimeAids };
         const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(packageData, null, 2));
         const downloadAnchor = document.createElement('a'); downloadAnchor.setAttribute("href", dataStr);
         downloadAnchor.setAttribute("download", "sauvegarde-suivi-solaire.json");
         document.body.appendChild(downloadAnchor); downloadAnchor.click(); downloadAnchor.remove();
     }
 
-    function processRowCalculations(row, isReferencePeriod) {
+    const CO2_KG_PAR_KWH = 0.056;
+
+    function processRowCalculations(row, isReferencePeriod, aideAmount = 0) {
         const tarif = row.kwh > 0 ? (row.facture / row.kwh) : 0;
         let economies = 0;
-        if (!isReferencePeriod && row.kwh < refKwh) { economies = (refKwh - row.kwh) * tarif; }
+        let kwhEconomises = 0;
+        if (!isReferencePeriod && row.kwh < refKwh) {
+            kwhEconomises = refKwh - row.kwh;
+            economies = kwhEconomises * tarif;
+        }
         if(row.date === "juin-24" && row.facture === 2309.18) { economies = 80.15; }
+        // L'aide ponctuelle est déjà comprise dans row.revente : elle n'est pas ré-ajoutée ici,
+        // elle sert uniquement à l'exclure du gain récurrent utilisé pour les projections.
         const gainsAnnuels = economies + row.revente;
-        return { ...row, tarif, economies, gainsAnnuels };
+        return { ...row, tarif, economies, kwhEconomises, aide: aideAmount, gainsAnnuels };
     }
 
     function initSaisieTab() {
@@ -475,16 +595,20 @@
     }
 
     function calculateAndRender() {
-        // AJUSTEMENT : Libellé "Valeur de l'investissement" explicite
         const kpiInv = document.getElementById('kpi-invest');
-        if (kpiInv) kpiInv.innerText = "Valeur de l’investissement : " + Math.round(appInvest).toLocaleString('fr-FR') + " €";
+        if (kpiInv) kpiInv.innerText = Math.round(appInvest).toLocaleString('fr-FR') + " €";
         
-        let processedRealRows = appData.map(row => processRowCalculations(row, row.date === "juin-23"));
+        const aidesParPeriode = {};
+        oneTimeAids.forEach(aid => { aidesParPeriode[aid.date] = (aidesParPeriode[aid.date] || 0) + aid.montant; });
 
-        let derniereAnneeGains = 1805.20; 
-        if(processedRealRows.length > 0) {
-            let lastReal = processedRealRows[processedRealRows.length - 1];
-            if(lastReal.gainsAnnuels > 0) derniereAnneeGains = lastReal.gainsAnnuels;
+        let processedRealRows = appData.map(row => processRowCalculations(row, row.date === "juin-23", aidesParPeriode[row.date] || 0));
+
+        let lastRealRow = processedRealRows.length > 0 ? processedRealRows[processedRealRows.length - 1] : null;
+
+        let derniereAnneeGains = 1805.20;
+        if(lastRealRow) {
+            let gainRecurrent = lastRealRow.gainsAnnuels - lastRealRow.aide;
+            if(gainRecurrent > 0) derniereAnneeGains = gainRecurrent;
         }
 
         let totalGainsReels = processedRealRows.reduce((acc, r) => acc + r.gainsAnnuels, 0);
@@ -496,13 +620,32 @@
         const kpiRest = document.getElementById('kpi-rest');
         const kpiYears = document.getElementById('kpi-years');
         const kpiGauge = document.getElementById('kpi-gauge');
-        
+
         if (kpiGains) kpiGains.innerText = Math.round(totalGainsReels).toLocaleString('fr-FR') + " €";
         if (kpiRest) kpiRest.innerText = Math.round(resteAAmortir).toLocaleString('fr-FR') + " €";
         if (kpiYears) kpiYears.innerText = `~${tempsTotalEstime.toFixed(1)} ans`;
-        
+
         let pPct = appInvest > 0 ? (totalGainsReels / appInvest) * 100 : 0;
         if (kpiGauge) kpiGauge.style.width = Math.min(100, pPct) + "%";
+
+        const kpiTarif = document.getElementById('kpi-tarif');
+        const kpiTarifNote = document.getElementById('kpi-tarif-note');
+        if (kpiTarif && processedRealRows.length > 0) {
+            const dernierTarif = processedRealRows[processedRealRows.length - 1];
+            kpiTarif.innerText = dernierTarif.tarif.toFixed(2) + " €";
+            if (kpiTarifNote) kpiTarifNote.innerText = `par kWh, période ${dernierTarif.date}`;
+        }
+
+        const kpiEcoMensuelle = document.getElementById('kpi-eco-mensuelle');
+        if (kpiEcoMensuelle) {
+            kpiEcoMensuelle.innerText = Math.round(derniereAnneeGains / 12).toLocaleString('fr-FR') + " €";
+        }
+
+        const kpiCo2 = document.getElementById('kpi-co2');
+        if (kpiCo2) {
+            const totalKwhEconomises = processedRealRows.reduce((acc, r) => acc + r.kwhEconomises, 0);
+            kpiCo2.innerText = Math.round(totalKwhEconomises * CO2_KG_PAR_KWH).toLocaleString('fr-FR') + " kg";
+        }
 
         let fullDashboardData = processedRealRows.map(r => ({...r, isReal: true}));
         let simulatedRenta = appInvest - totalGainsReels;
@@ -514,93 +657,51 @@
         
         let indexProjection = 1;
         let referenceLastRow = appData[appData.length - 1] || { facture: 1869.64, kwh: 7375, revente: 1082.70 };
+        // Le surplus revente projeté exclut la part d'aide ponctuelle pour ne pas la reconduire chaque année.
+        let projectedRevente = lastRealRow ? Math.max(0, derniereAnneeGains - lastRealRow.economies) : referenceLastRow.revente;
 
         while(simulatedRenta > 0 && indexProjection <= 8) {
             lastDateYear++; simulatedRenta -= derniereAnneeGains;
-            let simulatedRow = { date: `juin-${lastDateYear}`, detail: `+${indexProjection}a`, facture: referenceLastRow.facture, kwh: referenceLastRow.kwh, revente: referenceLastRow.revente };
+            let simulatedRow = { date: `juin-${lastDateYear}`, detail: `+${indexProjection}a`, facture: referenceLastRow.facture, kwh: referenceLastRow.kwh, revente: projectedRevente };
             fullDashboardData.push({ ...processRowCalculations(simulatedRow, false), isReal: false });
             indexProjection++;
         }
 
-        const table = document.getElementById('summaryTable');
-        if(!table) return;
-        table.innerHTML = '';
+        const compareContainer = document.getElementById('summaryCompare');
+        if(!compareContainer) return;
+        compareContainer.innerHTML = '';
 
-        const labelsLignes = [
-            { id: 'date', label: 'Période' },
-            { id: 'detail', label: 'Statut' },
-            { id: 'facture', label: 'Facture' },
-            { id: 'kwh', label: 'Conso kWh' },
-            { id: 'tarif', label: 'Tarif/kWh' },
-            { id: 'economies', label: 'Économies' },
-            { id: 'revente', label: 'Revente' },
-            { id: 'gainsAnnuels', label: 'Gain An.' },
-            { id: 'resteDu', label: 'Reste dû' }
-        ];
+        const maxGain = Math.max(...fullDashboardData.map(r => r.gainsAnnuels), 1);
+        let cumulRunning = 0;
+        fullDashboardData.forEach(colData => {
+            cumulRunning += colData.gainsAnnuels;
+            const resteCap = Math.max(0, appInvest - cumulRunning);
+            const pct = Math.max(4, (colData.gainsAnnuels / maxGain) * 100);
 
-        labelsLignes.forEach((ligneSpecs, indexLigne) => {
-            const tr = document.createElement('tr');
-            if (indexLigne === 0) tr.classList.add('years-header');
-
-            const tdHeader = document.createElement('td');
-            tdHeader.classList.add('row-header');
-            tdHeader.innerText = ligneSpecs.label;
-            tr.appendChild(tdHeader);
-
-            fullDashboardData.forEach(colData => {
-                const td = document.createElement('td');
-                if (!colData.isReal) td.classList.add('proj-col');
-
-                switch (ligneSpecs.id) {
-                    case 'date':
-                        td.innerHTML = `<b>${colData.date}</b>`;
-                        break;
-                    case 'detail':
-                        td.innerHTML = `<span class="badge ${colData.isReal ? 'real' : 'proj'}">${colData.detail}</span>`;
-                        break;
-                    case 'facture':
-                        td.innerText = `${colData.facture.toFixed(0)} €`;
-                        break;
-                    case 'kwh':
-                        td.innerText = `${colData.kwh}`;
-                        break;
-                    case 'tarif':
-                        td.innerText = `${colData.tarif.toFixed(2)} €`;
-                        break;
-                    case 'economies':
-                        td.innerText = colData.economies > 0 ? `${colData.economies.toFixed(0)} €` : '-';
-                        break;
-                    case 'revente':
-                        td.innerText = colData.revente > 0 ? `${colData.revente.toFixed(0)} €` : '-';
-                        break;
-                    case 'gainsAnnuels':
-                        td.innerText = `${colData.gainsAnnuels.toFixed(0)} €`;
-                        if (colData.isReal) td.style.color = 'var(--neon-green)';
-                        td.style.fontWeight = '600';
-                        break;
-                    case 'resteDu':
-                        let cumulJusquIci = fullDashboardData
-                            .slice(0, fullDashboardData.indexOf(colData) + 1)
-                            .reduce((sum, r) => sum + r.gainsAnnuels, 0);
-                        let resteCap = Math.max(0, appInvest - cumulJusquIci);
-                        td.innerText = `${resteCap.toFixed(0)} €`;
-                        td.style.fontWeight = '600';
-                        if (resteCap > 0) {
-                            td.style.color = colData.isReal ? 'var(--neon-red)' : 'var(--text-muted)';
-                        } else {
-                            td.style.color = 'var(--neon-green)';
-                        }
-                        break;
-                }
-                tr.appendChild(td);
-            });
-            table.appendChild(tr);
+            const row = document.createElement('div');
+            row.className = 'compare-row' + (colData.isReal ? '' : ' proj');
+            row.innerHTML = `
+                <div class="compare-row-top">
+                    <span class="compare-date">${colData.date}</span>
+                    <span class="badge ${colData.isReal ? 'real' : 'proj'}">${colData.detail}</span>
+                    ${colData.aide > 0 ? `<span class="badge aid" title="Inclut ${colData.aide.toFixed(0)} € d'aide ponctuelle">🎁 aide</span>` : ''}
+                    <span class="compare-gain">+${colData.gainsAnnuels.toFixed(0)} €</span>
+                </div>
+                <div class="compare-bar-track"><div class="compare-bar-fill" style="width:${pct}%"></div></div>
+                <div class="compare-row-bottom">
+                    <span>Facture ${colData.facture.toFixed(0)} €</span>
+                    <span>${colData.kwh} kWh</span>
+                    <span class="compare-reste">Reste ${resteCap.toFixed(0)} €</span>
+                </div>
+            `;
+            compareContainer.appendChild(row);
         });
 
         if (typeof Chart !== 'undefined') {
             try {
                 if(roiChartInstance) roiChartInstance.destroy();
                 if(breakdownChartInstance) breakdownChartInstance.destroy();
+                if(gainCompareChartInstance) gainCompareChartInstance.destroy();
 
                 Chart.defaults.color = '#94a3b8';
                 Chart.defaults.borderColor = 'rgba(255, 255, 255, 0.04)';
@@ -708,9 +809,43 @@
                         }
                     });
                 }
+
+                const ctxGainCompare = document.getElementById('gainCompareChart');
+                if(ctxGainCompare) {
+                    const ctxGainCompare2d = ctxGainCompare.getContext('2d');
+
+                    gainCompareChartInstance = new Chart(ctxGainCompare2d, {
+                        type: 'bar',
+                        data: {
+                            labels: fullDashboardData.map(d => d.date),
+                            datasets: [{
+                                label: 'Gain annuel',
+                                data: fullDashboardData.map(d => d.gainsAnnuels),
+                                backgroundColor: fullDashboardData.map(d => d.isReal ? 'rgba(74, 222, 128, 0.55)' : 'rgba(255, 255, 255, 0.12)'),
+                                borderColor: fullDashboardData.map(d => d.isReal ? '#4ade80' : 'rgba(255, 255, 255, 0.25)'),
+                                borderWidth: 1.5,
+                                borderRadius: 4
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: { legend: { display: false } },
+                            scales: {
+                                x: { grid: { display: false } },
+                                y: {
+                                  grid: { color: 'rgba(255, 255, 255, 0.03)' },
+                                  ticks: { padding: 8 }
+                                }
+                            }
+                        }
+                    });
+                }
             } catch(e) { console.error("Erreur chart", e); }
         }
     }
+
+    loadLocalData();
 </script>
 
 </body>
