@@ -5,24 +5,71 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>Suivi Solaire - Liquid Glass</title>
 <meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Solaire Glass">
 <meta name="theme-color" content="#1e1b4b">
+<link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" type="image/png" href="favicon-32.png">
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="chart.umd.min.js"></script>
 <style>
   :root {
+    color-scheme: dark;
+    --bg-base: #000;
+    --bg-glow: #1e1b4b;
     --glass-bg: rgba(22, 28, 45, 0.65);
-    --glass-border: 1px solid rgba(255, 255, 255, 0.08);
     --input-bg: rgba(30, 41, 59, 0.7);
+    --input-bg-focus: rgba(30, 41, 59, 0.9);
     --text-main: #f3f4f6;
     --text-muted: #94a3b8;
+    --border-glass: rgba(255, 255, 255, 0.08);
+    --border-soft: rgba(255, 255, 255, 0.05);
+    --surface-1: rgba(255, 255, 255, 0.04);
+    --surface-2: rgba(255, 255, 255, 0.06);
+    --surface-3: rgba(255, 255, 255, 0.08);
+    --surface-active: rgba(255, 255, 255, 0.12);
+    --tint-end: rgba(11, 15, 25, 0.55);
+    --row-bg: rgba(255, 255, 255, 0.03);
+    --row-border: rgba(255, 255, 255, 0.07);
+    --overlay: rgba(0, 0, 0, 0.75);
     --neon-blue: #38bdf8;
     --neon-green: #4ade80;
     --neon-red: #f43f5e;
     --neon-orange: #fbbf24;
     --neon-purple: #a78bfa;
+    --neon-teal: #2dd4bf;
+    --neon-amber: #fbbf24;
+  }
+
+  @media (prefers-color-scheme: light) {
+    :root {
+      color-scheme: light;
+      --bg-base: #eef2f7;
+      --bg-glow: #c7d2fe;
+      --glass-bg: rgba(255, 255, 255, 0.78);
+      --input-bg: rgba(241, 245, 249, 0.95);
+      --input-bg-focus: #ffffff;
+      --text-main: #0f172a;
+      --text-muted: #64748b;
+      --border-glass: rgba(15, 23, 42, 0.09);
+      --border-soft: rgba(15, 23, 42, 0.07);
+      --surface-1: rgba(15, 23, 42, 0.04);
+      --surface-2: rgba(15, 23, 42, 0.06);
+      --surface-3: rgba(15, 23, 42, 0.08);
+      --surface-active: rgba(255, 255, 255, 0.95);
+      --tint-end: rgba(255, 255, 255, 0.6);
+      --row-bg: rgba(15, 23, 42, 0.03);
+      --row-border: rgba(15, 23, 42, 0.09);
+      --overlay: rgba(15, 23, 42, 0.45);
+      --neon-blue: #0284c7;
+      --neon-green: #16a34a;
+      --neon-red: #e11d48;
+      --neon-orange: #d97706;
+      --neon-purple: #7c3aed;
+      --neon-teal: #0d9488;
+      --neon-amber: #b45309;
+    }
   }
 
   /* --- Comportement Application Native --- */
@@ -35,8 +82,8 @@
 
   html {
     height: 100%;
-    background-color: #000;
-    background-image: radial-gradient(circle at 50% -20%, #1e1b4b 0%, #000 70%);
+    background-color: var(--bg-base);
+    background-image: radial-gradient(circle at 50% -20%, var(--bg-glow) 0%, var(--bg-base) 70%);
     background-attachment: fixed;
     overscroll-behavior-y: none;
   }
@@ -69,27 +116,31 @@
     border-radius: 16px;
     padding: 16px;
     margin-bottom: 14px;
-    border: var(--glass-border);
+    border: 1px solid var(--border-glass);
     box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+  }
+
+  @media (prefers-color-scheme: light) {
+    .card { box-shadow: 0 8px 32px 0 rgba(15, 23, 42, 0.08); }
   }
 
   .card h2 { margin: 0 0 12px; font-size: 11px; color: var(--text-muted); font-weight: 700; text-transform: uppercase; letter-spacing: 1px; }
 
   /* --- CARTES TEINTÉES --- */
   .kpi-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 14px; }
-  .card-tint-green { background: linear-gradient(160deg, rgba(74,222,128,0.16), rgba(11,15,25,0.55)); border-color: rgba(74,222,128,0.22); }
-  .card-tint-red { background: linear-gradient(160deg, rgba(244,63,94,0.16), rgba(11,15,25,0.55)); border-color: rgba(244,63,94,0.22); }
-  .card-tint-blue { background: linear-gradient(160deg, rgba(56,189,248,0.16), rgba(11,15,25,0.55)); border-color: rgba(56,189,248,0.22); }
-  .card-tint-purple { background: linear-gradient(160deg, rgba(167,139,250,0.16), rgba(11,15,25,0.55)); border-color: rgba(167,139,250,0.22); }
-  .card-tint-amber { background: linear-gradient(160deg, rgba(251,191,36,0.16), rgba(11,15,25,0.55)); border-color: rgba(251,191,36,0.22); }
-  .card-tint-teal { background: linear-gradient(160deg, rgba(45,212,191,0.16), rgba(11,15,25,0.55)); border-color: rgba(45,212,191,0.22); }
+  .card-tint-green { background: linear-gradient(160deg, rgba(74,222,128,0.16), var(--tint-end)); border-color: rgba(74,222,128,0.22); }
+  .card-tint-red { background: linear-gradient(160deg, rgba(244,63,94,0.16), var(--tint-end)); border-color: rgba(244,63,94,0.22); }
+  .card-tint-blue { background: linear-gradient(160deg, rgba(56,189,248,0.16), var(--tint-end)); border-color: rgba(56,189,248,0.22); }
+  .card-tint-purple { background: linear-gradient(160deg, rgba(167,139,250,0.16), var(--tint-end)); border-color: rgba(167,139,250,0.22); }
+  .card-tint-amber { background: linear-gradient(160deg, rgba(251,191,36,0.16), var(--tint-end)); border-color: rgba(251,191,36,0.22); }
+  .card-tint-teal { background: linear-gradient(160deg, rgba(45,212,191,0.16), var(--tint-end)); border-color: rgba(45,212,191,0.22); }
 
   .kpi-value { font-size: 26px; font-weight: 700; letter-spacing: -0.5px; }
   .kpi-value.green { color: var(--neon-green); }
   .kpi-value.red { color: var(--neon-red); }
   .kpi-value.blue { color: var(--neon-blue); }
-  .kpi-value.amber { color: #fbbf24; }
-  .kpi-value.teal { color: #2dd4bf; }
+  .kpi-value.amber { color: var(--neon-amber); }
+  .kpi-value.teal { color: var(--neon-teal); }
   .kpi-note { font-size: 11px; color: var(--text-muted); margin-top: 6px; }
 
   /* --- CARTES "ICÔNE + CONTENU" (style CO2) --- */
@@ -97,7 +148,7 @@
   .icon-card-icon {
     flex-shrink: 0; font-size: 26px; line-height: 1; width: 44px; height: 44px;
     display: flex; align-items: center; justify-content: center;
-    border-radius: 12px; background: rgba(255, 255, 255, 0.06);
+    border-radius: 12px; background: var(--surface-2);
   }
   .icon-card-body { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
   .icon-card-body h2 { margin-bottom: 4px; }
@@ -115,7 +166,7 @@
 
   .progress-track {
     position: relative; height: 10px; border-radius: 6px; overflow: hidden;
-    background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.04); margin: 10px 0 8px;
+    background: var(--surface-2); border: 1px solid var(--border-soft); margin: 10px 0 8px;
   }
   .progress-fill { height: 100%; border-radius: 6px; background: linear-gradient(to right, var(--neon-purple), var(--neon-blue)); width: 0%; transition: width 0.8s ease-out; }
   .progress-scale { display: flex; justify-content: space-between; font-size: 10px; color: var(--text-muted); }
@@ -125,10 +176,10 @@
   .row label { font-size: 12px; color: var(--text-muted); font-weight: 500; }
   .row input, .row select {
     width: 100%; padding: 10px 12px; background-color: var(--input-bg);
-    border: 1px solid rgba(255, 255, 255, 0.05); border-radius: 10px;
-    font-size: 14px; color: #ffffff; outline: none; transition: all 0.2s;
+    border: 1px solid var(--border-soft); border-radius: 10px;
+    font-size: 14px; color: var(--text-main); outline: none; transition: all 0.2s;
   }
-  .row input:focus, .row select:focus { border-color: var(--neon-blue); background-color: rgba(30, 41, 59, 0.9); }
+  .row input:focus, .row select:focus { border-color: var(--neon-blue); background-color: var(--input-bg-focus); }
   .row-inline { flex-direction: row; gap: 10px; }
   .row-inline > div { flex: 1; display: flex; flex-direction: column; gap: 4px; }
 
@@ -136,52 +187,55 @@
   .switch-row label { font-size: 13px; color: var(--text-main); font-weight: 500; }
   .switch-row input[type="checkbox"] {
     appearance: none; -webkit-appearance: none; width: 46px; height: 26px; border-radius: 13px;
-    background: rgba(255,255,255,0.12); position: relative; cursor: pointer; transition: background 0.2s;
-    flex-shrink: 0; border: 1px solid rgba(255,255,255,0.08);
+    background: var(--surface-active); position: relative; cursor: pointer; transition: background 0.2s;
+    flex-shrink: 0; border: 1px solid var(--border-glass);
   }
   .switch-row input[type="checkbox"]::after {
     content: ''; position: absolute; top: 2px; left: 2px; width: 20px; height: 20px;
-    border-radius: 50%; background: #fff; transition: transform 0.2s;
+    border-radius: 50%; background: #fff; transition: transform 0.2s; box-shadow: 0 1px 3px rgba(0,0,0,0.3);
   }
   .switch-row input[type="checkbox"]:checked { background: var(--neon-green); }
   .switch-row input[type="checkbox"]:checked::after { transform: translateX(20px); }
 
-  .sim-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid rgba(255, 255, 255, 0.05); font-size: 13px; }
+  .sim-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--border-soft); font-size: 13px; }
   .sim-row span { color: var(--text-muted); }
   .sim-row strong { font-weight: 600; color: var(--text-main); }
-  .divider { border: none; border-top: 1px solid rgba(255, 255, 255, 0.08); margin: 12px 0; }
+  .divider { border: none; border-top: 1px solid var(--border-glass); margin: 12px 0; }
 
   /* BOUTONS */
   button { width: 100%; padding: 12px; border: none; border-radius: 12px; font-weight: 600; font-size: 14px; cursor: pointer; transition: transform 0.1s, opacity 0.2s; }
   button:active { transform: scale(0.98); opacity: 0.9; }
-  .btn-blue { background: linear-gradient(135deg, var(--neon-blue), #0284c7); color: #ffffff; }
-  .btn-gray { background: rgba(255, 255, 255, 0.08); color: var(--text-main); font-size: 12px; padding: 8px; }
+  .btn-blue { background: linear-gradient(135deg, #38bdf8, #0284c7); color: #ffffff; }
+  .btn-gray { background: var(--surface-3); color: var(--text-main); font-size: 12px; padding: 8px; }
 
   /* NAV TABS */
-  .tabs { display: flex; gap: 4px; margin-bottom: 14px; background: rgba(255, 255, 255, 0.04); padding: 4px; border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.02); }
+  .tabs { display: flex; gap: 4px; margin-bottom: 14px; background: var(--surface-1); padding: 4px; border-radius: 12px; border: 1px solid var(--border-soft); }
   .tab-btn { flex: 1; padding: 8px 2px; border: none; background: transparent; color: var(--text-muted); font-weight: 500; font-size: 12px; border-radius: 8px; cursor: pointer; transition: all 0.2s; }
-  .tab-btn.active { background: rgba(255, 255, 255, 0.12); color: #fff; font-weight: 600; backdrop-filter: blur(5px); -webkit-backdrop-filter: blur(5px); }
+  .tab-btn.active { background: var(--surface-active); color: var(--text-main); font-weight: 600; backdrop-filter: blur(5px); -webkit-backdrop-filter: blur(5px); }
 
   .tab-content { display: none; }
   .tab-content.active { display: block; }
 
   .badge { display: inline-block; padding: 2px 6px; border-radius: 4px; font-size: 9px; font-weight: 700; text-transform: uppercase; }
   .badge.real { background: rgba(74, 222, 128, 0.15); color: var(--neon-green); }
-  .badge.proj { background: rgba(255, 255, 255, 0.08); color: #e2e8f0; border: 1px solid rgba(255, 255, 255, 0.05); }
-  .badge.aid { background: rgba(251, 191, 36, 0.15); color: #fbbf24; }
+  .badge.proj { background: var(--surface-3); color: var(--text-main); border: 1px solid var(--border-soft); }
+  .badge.aid { background: rgba(251, 191, 36, 0.15); color: var(--neon-amber); }
 
-  .btn-danger-item { background: transparent; color: var(--neon-red); width: auto; padding: 4px 8px; font-size: 11px; border-radius: 6px; border: 1px solid rgba(244,63,94,0.2); font-weight: 500; }
+  .btn-danger-item { background: transparent; color: var(--neon-red); width: auto; padding: 4px 8px; font-size: 11px; border-radius: 6px; border: 1px solid rgba(244,63,94,0.25); font-weight: 500; }
+
+  #editTable td, #monthTable td { border-bottom: 1px solid var(--border-soft); }
+  .table-container { overflow-x: auto; }
 
   /* --- COMPARATIF DES GAINS PAR PÉRIODE (liste à barres) --- */
   .compare-list { display: flex; flex-direction: column; gap: 10px; }
-  .compare-row { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.07); border-radius: 12px; padding: 10px 12px; }
+  .compare-row { background: var(--row-bg); border: 1px solid var(--row-border); border-radius: 12px; padding: 10px 12px; }
   .compare-row.proj { border-style: dashed; opacity: 0.75; }
   .compare-row-top { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
   .compare-date { font-weight: 700; font-size: 13px; min-width: 58px; flex-shrink: 0; }
   .compare-gain { margin-left: auto; color: var(--neon-green); font-weight: 700; font-size: 13px; }
-  .compare-bar-track { height: 8px; border-radius: 5px; background: rgba(255,255,255,0.06); overflow: hidden; margin-bottom: 6px; }
+  .compare-bar-track { height: 8px; border-radius: 5px; background: var(--surface-2); overflow: hidden; margin-bottom: 6px; }
   .compare-bar-fill { height: 100%; border-radius: 5px; background: linear-gradient(to right, #38bdf8, #4ade80); }
-  .compare-row.proj .compare-bar-fill { background: rgba(255,255,255,0.18); }
+  .compare-row.proj .compare-bar-fill { background: var(--surface-active); }
   .compare-row-bottom { display: grid; grid-template-columns: 1fr 1fr 1fr; font-size: 10.5px; color: var(--text-muted); }
   .compare-row-bottom span:nth-child(1) { text-align: left; }
   .compare-row-bottom span:nth-child(2) { text-align: center; }
@@ -192,28 +246,75 @@
 
   /* --- STYLES MODAL GAINS CUMULÉS --- */
   .modal-overlay {
-    position: fixed; inset: 0; background: rgba(0, 0, 0, 0.75);
+    position: fixed; inset: 0; background: var(--overlay);
     backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px);
     z-index: 2000; display: flex; align-items: center; justify-content: center;
     opacity: 0; pointer-events: none; transition: opacity 0.25s ease; padding: 16px;
   }
   .modal-overlay.active { opacity: 1; pointer-events: auto; }
   .modal-content {
-    background: var(--glass-bg); border: var(--glass-border);
+    background: var(--glass-bg); border: 1px solid var(--border-glass);
     border-radius: 20px; width: 100%; max-width: 480px; padding: 20px;
-    box-shadow: 0 24px 48px rgba(0, 0, 0, 0.6); max-height: 80vh; overflow-y: auto;
+    box-shadow: 0 24px 48px rgba(0, 0, 0, 0.6); max-height: 85vh; overflow-y: auto;
     position: relative; transform: translateY(15px); transition: transform 0.25s ease;
   }
   .modal-overlay.active .modal-content { transform: translateY(0); }
-  .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; border-bottom: 1px solid rgba(255, 255, 255, 0.08); padding-bottom: 12px; }
+  .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; border-bottom: 1px solid var(--border-glass); padding-bottom: 12px; }
   .modal-title { font-size: 16px; font-weight: 700; color: var(--text-main); }
   .close-modal { background: none; border: none; color: var(--text-muted); font-size: 22px; cursor: pointer; width: auto; padding: 0 4px; }
   .modal-table { width: 100%; border-collapse: collapse; text-align: left; font-size: 13px; }
-  .modal-table th, .modal-table td { padding: 10px 6px; border-bottom: 1px solid rgba(255, 255, 255, 0.05); }
+  .modal-table th, .modal-table td { padding: 10px 6px; border-bottom: 1px solid var(--border-soft); }
   .modal-table th { color: var(--text-muted); font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 700; }
-  .modal-total-row { font-weight: 700; background: rgba(255, 255, 255, 0.02); }
+  .modal-total-row { font-weight: 700; background: var(--surface-1); }
 
   .empty-note { font-size: 12px; color: var(--text-muted); text-align: center; padding: 12px 0; }
+
+  /* --- MODAL BILAN PARTAGEABLE (pensée pour la capture d'écran) --- */
+  .share-card {
+    background: linear-gradient(165deg, #312e81 0%, #1e1b4b 48%, #0c4a6e 100%);
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    border-radius: 26px; width: 100%; max-width: 380px; padding: 26px 22px 20px;
+    color: #f8fafc; text-align: center; position: relative; overflow: hidden;
+    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.55);
+    transform: translateY(15px); transition: transform 0.25s ease;
+  }
+  .modal-overlay.active .share-card { transform: translateY(0); }
+  .share-card::before {
+    content: ''; position: absolute; inset: -40% -20% auto; height: 70%;
+    background: radial-gradient(circle at 50% 100%, rgba(251, 191, 36, 0.22) 0%, transparent 65%);
+    pointer-events: none;
+  }
+  .share-close { position: absolute; top: 10px; right: 14px; color: rgba(255,255,255,0.6); z-index: 2; }
+  .share-header { display: flex; align-items: center; justify-content: center; gap: 10px; position: relative; }
+  .share-sun { font-size: 30px; }
+  .share-title { font-size: 17px; font-weight: 800; letter-spacing: -0.3px; text-align: left; }
+  .share-date { font-size: 11px; color: rgba(255, 255, 255, 0.65); text-align: left; text-transform: capitalize; }
+  .share-ring {
+    width: 150px; height: 150px; border-radius: 50%; margin: 20px auto 14px;
+    display: flex; align-items: center; justify-content: center; position: relative;
+  }
+  .share-ring-inner {
+    width: 116px; height: 116px; border-radius: 50%; background: rgba(11, 15, 25, 0.82);
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px;
+  }
+  .share-ring-inner span { font-size: 30px; font-weight: 800; color: #4ade80; letter-spacing: -1px; }
+  .share-ring-inner small { font-size: 10px; text-transform: uppercase; letter-spacing: 1.5px; color: rgba(255, 255, 255, 0.6); }
+  .share-headline { font-size: 15px; font-weight: 700; margin-bottom: 16px; position: relative; }
+  .share-headline b { color: #fbbf24; }
+  .share-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; position: relative; }
+  .share-stat {
+    background: rgba(255, 255, 255, 0.09); border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 14px; padding: 12px 6px; display: flex; flex-direction: column; gap: 2px; align-items: center;
+  }
+  .share-stat b { font-size: 16px; font-weight: 700; }
+  .share-stat small { font-size: 9.5px; text-transform: uppercase; letter-spacing: 0.8px; color: rgba(255, 255, 255, 0.62); }
+  .share-stat .emoji { font-size: 17px; }
+  .share-footer {
+    margin-top: 14px; padding: 10px; border-radius: 12px; font-size: 12.5px;
+    background: rgba(255, 255, 255, 0.07); position: relative;
+  }
+  .share-footer b { color: #38bdf8; }
+  .share-brand { margin-top: 12px; font-size: 10px; letter-spacing: 2px; text-transform: uppercase; color: rgba(255, 255, 255, 0.45); position: relative; }
 </style>
 </head>
 <body>
@@ -326,6 +427,8 @@
                 </div>
             </div>
 
+            <button class="btn-blue" onclick="openShareModal()" style="margin-bottom: 14px;">📸 Partager mon bilan</button>
+
             <div class="card graphs-card card-tint-blue">
                 <h2>📉 Trajectoire du Point Mort</h2>
                 <div style="position: relative; height:180px;"><canvas id="roiChart"></canvas></div>
@@ -360,7 +463,7 @@
                     </div>
                     <hr class="divider">
                     <div class="row">
-                        <label>Facture Électricité Annuelle TTC (€)</label>
+                        <label id="form-facture-label">Facture Électricité Annuelle TTC (€)</label>
                         <input type="number" step="0.01" min="0" id="form-facture" placeholder="ex: 1850.50" required>
                     </div>
                     <div class="row">
@@ -371,9 +474,30 @@
                         <label>Revente Surplus Facturé (€)</label>
                         <input type="number" step="0.01" min="0" id="form-revente" placeholder="ex: 1100.00">
                     </div>
+                    <div class="row" id="months-row">
+                        <label>Mois couverts par cette période — laissez vide pour 12 (ex : 6 si l'installation a démarré en cours d'année)</label>
+                        <input type="number" min="1" max="12" id="form-months" placeholder="12">
+                    </div>
                     <button type="submit" class="btn-blue" id="saisie-submit-btn" style="margin-top: 8px;">Enregistrer l'Année</button>
                     <button type="button" class="btn-gray" id="saisie-cancel-btn" onclick="cancelEditRow()" style="margin-top: 8px; display: none;">Annuler la modification</button>
                 </form>
+            </div>
+
+            <div class="card history-card" id="monthly-history-card" style="display: none;">
+                <h2>🗓️ Relevés Mensuels</h2>
+                <div class="table-container">
+                    <table id="monthTable" style="width: 100%; text-align: left; font-size: 12px; border-collapse: collapse;">
+                        <thead>
+                            <tr style="color: var(--text-muted); font-size: 10px; text-transform: uppercase; border-bottom: 1px solid var(--border-soft);">
+                                <th style="padding-bottom: 6px;">Mois</th>
+                                <th style="padding-bottom: 6px;">Facture</th>
+                                <th style="padding-bottom: 6px;">kWh</th>
+                                <th style="padding-bottom: 6px;">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
             </div>
 
             <div class="card history-card">
@@ -381,7 +505,7 @@
                 <div class="table-container">
                     <table id="editTable" style="width: 100%; text-align: left; font-size: 12px; border-collapse: collapse;">
                         <thead>
-                            <tr style="color: var(--text-muted); font-size: 10px; text-transform: uppercase; border-bottom: 1px solid rgba(255, 255, 255, 0.05);">
+                            <tr style="color: var(--text-muted); font-size: 10px; text-transform: uppercase; border-bottom: 1px solid var(--border-soft);">
                                 <th style="padding-bottom: 6px;">Période</th>
                                 <th style="padding-bottom: 6px;">Facture</th>
                                 <th style="padding-bottom: 6px;">Gains</th>
@@ -400,6 +524,13 @@
                 <div class="row">
                     <label>Coût d'investissement initial (€)</label>
                     <input type="number" step="0.01" min="0" id="config-invest" placeholder="ex: 12000">
+                </div>
+                <div class="row">
+                    <label>Mode de saisie des factures</label>
+                    <select id="config-billing">
+                        <option value="annuel">Annuelle — une saisie par an</option>
+                        <option value="mensuel">Mensuelle — une saisie par mois, agrégée par année</option>
+                    </select>
                 </div>
                 <div class="switch-row">
                     <label for="config-resale">☀️ Revente du surplus (injection réseau)</label>
@@ -442,6 +573,11 @@
                     <input type="number" min="0" id="config-ref-kwh" placeholder="ex: 9500">
                 </div>
                 <hr class="divider">
+                <h2>📈 Projections</h2>
+                <div class="row">
+                    <label>Hausse annuelle estimée du prix de l'électricité (%) — appliquée aux années projetées</label>
+                    <input type="number" step="0.1" id="config-inflation" placeholder="ex: 3">
+                </div>
                 <div class="row">
                     <label>Facteur d'émission CO2 évité (g/kWh) — 56 pour le mix français, ~400 pour le mix européen</label>
                     <input type="number" step="1" min="0" id="config-co2" placeholder="ex: 56">
@@ -476,9 +612,9 @@
                 </p>
                 <div class="sim-row" style="flex-wrap: wrap; gap: 6px; border-bottom: none; padding-bottom: 0;">
                     <span>Aide de</span>
-                    <input type="number" step="0.01" id="aid-amount" placeholder="1000" style="width: 90px; padding: 8px; background-color: var(--input-bg); border: 1px solid rgba(255,255,255,0.05); border-radius: 8px; color: #fff; font-size: 13px;">
+                    <input type="number" step="0.01" id="aid-amount" placeholder="1000" style="width: 90px; padding: 8px; background-color: var(--input-bg); border: 1px solid var(--border-soft); border-radius: 8px; color: var(--text-main); font-size: 13px;">
                     <span>€ reçue pour la période de</span>
-                    <select id="aid-period" style="padding: 8px; background-color: var(--input-bg); border: 1px solid rgba(255,255,255,0.05); border-radius: 8px; color: #fff; font-size: 13px;"></select>
+                    <select id="aid-period" style="padding: 8px; background-color: var(--input-bg); border: 1px solid var(--border-soft); border-radius: 8px; color: var(--text-main); font-size: 13px;"></select>
                 </div>
                 <button class="btn-blue" onclick="addOneTimeAid()" style="margin-top: 10px;">Ajouter l'aide</button>
                 <div id="aidsList" style="margin-top: 10px;"></div>
@@ -498,6 +634,34 @@
     </div>
 </div>
 
+<div id="shareModal" class="modal-overlay" onclick="closeShareModal()">
+    <div class="share-card" onclick="event.stopPropagation()">
+        <button class="close-modal share-close" onclick="closeShareModal()">✕</button>
+        <div class="share-header">
+            <div class="share-sun">☀️</div>
+            <div>
+                <div class="share-title">Mon Bilan Solaire</div>
+                <div class="share-date" id="share-date">...</div>
+            </div>
+        </div>
+        <div class="share-ring" id="share-ring">
+            <div class="share-ring-inner">
+                <span id="share-pct">0%</span>
+                <small>amorti</small>
+            </div>
+        </div>
+        <div class="share-headline" id="share-headline">...</div>
+        <div class="share-stats">
+            <div class="share-stat"><span class="emoji">💰</span><b id="share-gains">0 €</b><small>gains cumulés</small></div>
+            <div class="share-stat"><span class="emoji">⏳</span><b id="share-rest">0 €</b><small>reste à amortir</small></div>
+            <div class="share-stat"><span class="emoji">🗓️</span><b id="share-eco">0 €</b><small>économie / mois</small></div>
+            <div class="share-stat"><span class="emoji">🌱</span><b id="share-co2">0 kg</b><small>CO2 évité</small></div>
+        </div>
+        <div class="share-footer">🎯 Point mort estimé : <b id="share-years">—</b></div>
+        <div class="share-brand">☀️ Suivi Solaire</div>
+    </div>
+</div>
+
 <script>
     function safeGetItem(key) { try { return localStorage.getItem(key); } catch(e) { return null; } }
     function safeSetItem(key, value) { try { localStorage.setItem(key, value); } catch(e) {} }
@@ -508,6 +672,9 @@
     const CONFIG_KEY = 'solar_config_v2';
     const DATA_KEY = 'solar_data_v2';
     const AIDS_KEY = 'solar_aids_v2';
+    const MONTHLY_KEY = 'solar_monthly_v2';
+
+    const MOIS = ['janvier','février','mars','avril','mai','juin','juillet','août','septembre','octobre','novembre','décembre'];
 
     const DEFAULT_CONFIG = {
         invest: 0,             // coût de l'installation (€)
@@ -516,18 +683,46 @@
         refFacture: 0,         // facture totale de l'année de référence (€)
         refKwh: 0,             // consommation de l'année de référence (kWh)
         hasResale: true,       // revente du surplus activée ou non
-        co2Factor: 56          // g de CO2 évité par kWh économisé
+        co2Factor: 56,         // g de CO2 évité par kWh économisé
+        billingMode: 'annuel', // 'annuel' ou 'mensuel'
+        inflationPct: 0        // hausse annuelle estimée du prix de l'électricité (%)
     };
 
     let config = { ...DEFAULT_CONFIG };
-    let appData = [];        // années post-installation uniquement (la référence vit dans config)
+    let appData = [];        // années saisies manuellement (la référence vit dans config)
+    let monthlyData = [];    // relevés mensuels [{ym: "2024-07", facture, kwh, revente}]
     let oneTimeAids = [];
-    let editingDate = null;
+    let editingDate = null;  // édition d'une année
+    let editingYm = null;    // édition d'un mois
 
     let roiChartInstance = null;
     let breakdownChartInstance = null;
     let gainCompareChartInstance = null;
     let projectedYearsExpanded = false;
+
+    /* --- THÈME CLAIR / SOMBRE (suit le réglage du système) --- */
+    const lightMq = window.matchMedia('(prefers-color-scheme: light)');
+    function isLight() { return lightMq.matches; }
+    function chartColors() {
+        return isLight()
+            ? { tick: '#475569', grid: 'rgba(15, 23, 42, 0.07)', seuil: '#94a3b8', pointBorder: '#ffffff' }
+            : { tick: '#94a3b8', grid: 'rgba(255, 255, 255, 0.03)', seuil: '#475569', pointBorder: '#0b0f19' };
+    }
+    function updateThemeColorMeta() {
+        const meta = document.querySelector('meta[name="theme-color"]');
+        if (meta) meta.setAttribute('content', isLight() ? '#e2e8f0' : '#1e1b4b');
+    }
+    function onThemeChange() { updateThemeColorMeta(); calculateAndRender(); }
+    if (lightMq.addEventListener) lightMq.addEventListener('change', onThemeChange);
+    else if (lightMq.addListener) lightMq.addListener(onThemeChange);
+    updateThemeColorMeta();
+
+    /* --- PWA : fonctionne hors ligne une fois installée --- */
+    if ('serviceWorker' in navigator && location.protocol.indexOf('http') === 0) {
+        window.addEventListener('load', function() {
+            navigator.serviceWorker.register('./sw.js').catch(function() {});
+        });
+    }
 
     function normYear(y) {
         y = parseInt(y);
@@ -539,6 +734,12 @@
         return `${config.refMonth}-${String(fullYear % 100).padStart(2, '0')}`;
     }
 
+    function yearOfLabel(label) {
+        const parts = String(label).split('-');
+        const y = parseInt(parts[parts.length - 1]);
+        return isNaN(y) ? 0 : (y < 100 ? 2000 + y : y);
+    }
+
     function refLabel() { return periodLabel(normYear(config.refYear)); }
 
     function isConfigured() {
@@ -547,6 +748,67 @@
 
     function refTarif() {
         return config.refKwh > 0 ? config.refFacture / config.refKwh : 0;
+    }
+
+    function inflationFactor() {
+        const p = parseFloat(config.inflationPct) || 0;
+        return 1 + p / 100;
+    }
+
+    /* --- GESTION DES MOIS (mode facturation mensuelle) --- */
+    function refMonthIdx1() {
+        const i = MOIS.indexOf(config.refMonth);
+        return i >= 0 ? i + 1 : 1;
+    }
+
+    function ymToLabel(ym) {
+        const parts = String(ym).split('-').map(Number);
+        if (parts.length !== 2 || !MOIS[parts[1] - 1]) return ym;
+        return `${MOIS[parts[1] - 1]} ${parts[0]}`;
+    }
+
+    /* Un exercice annuel se termine au mois du relevé : le mois M de l'année Y
+       appartient à la période dont le libellé porte l'année de fin. */
+    function bucketEndYear(ym) {
+        const [y, m] = String(ym).split('-').map(Number);
+        return m > refMonthIdx1() ? y + 1 : y;
+    }
+
+    function nextYm() {
+        if (monthlyData.length > 0) {
+            const [y, m] = monthlyData[monthlyData.length - 1].ym.split('-').map(Number);
+            return m >= 12 ? `${y + 1}-01` : `${y}-${String(m + 1).padStart(2, '0')}`;
+        }
+        let y = normYear(config.refYear), m = refMonthIdx1() + 1;
+        if (m > 12) { m = 1; y++; }
+        return `${y}-${String(m).padStart(2, '0')}`;
+    }
+
+    function aggregateMonthly() {
+        const buckets = {};
+        monthlyData.forEach(e => {
+            const end = bucketEndYear(e.ym);
+            const b = buckets[end] = buckets[end] || { end, facture: 0, kwh: 0, revente: 0, months: 0 };
+            b.facture += parseFloat(e.facture) || 0;
+            b.kwh += parseInt(e.kwh) || 0;
+            b.revente += parseFloat(e.revente) || 0;
+            b.months++;
+        });
+        return Object.values(buckets).sort((a, b) => a.end - b.end).map(b => ({
+            date: periodLabel(b.end), facture: b.facture, kwh: b.kwh, revente: b.revente,
+            monthsCount: Math.min(b.months, 12), fromMonthly: true
+        }));
+    }
+
+    /* Toutes les périodes annuelles : années saisies manuellement + agrégats mensuels. */
+    function getAnnualRows() {
+        const monthlyRows = aggregateMonthly();
+        const manual = appData.filter(r => !monthlyRows.some(m => m.date === r.date)).map(r => ({ ...r }));
+        const all = manual.concat(monthlyRows).sort((a, b) => yearOfLabel(a.date) - yearOfLabel(b.date));
+        return all.map((r, i) => ({
+            ...r,
+            detail: `Année ${i + 1}` + ((r.monthsCount || 12) < 12 ? ` · ${r.monthsCount}/12` : '')
+        }));
     }
 
     function toggleProjectedYears() {
@@ -563,6 +825,7 @@
             try {
                 config = { ...DEFAULT_CONFIG, ...JSON.parse(rawConfig) };
                 appData = JSON.parse(safeGetItem(DATA_KEY)) || [];
+                monthlyData = JSON.parse(safeGetItem(MONTHLY_KEY)) || [];
                 oneTimeAids = JSON.parse(safeGetItem(AIDS_KEY)) || [];
             } catch(e) {}
         } else {
@@ -603,6 +866,7 @@
             config.refKwh = refKwhV1;
         }
         appData = rows.filter((r, i) => i !== refIdx);
+        monthlyData = [];
         oneTimeAids = Array.isArray(aids) ? aids : [];
     }
 
@@ -618,6 +882,7 @@
                     // Format v2
                     config = { ...DEFAULT_CONFIG, ...parsed.config };
                     appData = Array.isArray(parsed.appData) ? parsed.appData : [];
+                    monthlyData = Array.isArray(parsed.monthlyData) ? parsed.monthlyData : [];
                     oneTimeAids = Array.isArray(parsed.oneTimeAids) ? parsed.oneTimeAids : [];
                 } else if (parsed.appData) {
                     // Ancien format v1
@@ -638,6 +903,7 @@
     function launchApplication() {
         initConfigInputs();
         applyResaleVisibility();
+        applyBillingModeVisibility();
         initSaisieTab();
         calculateAndRender();
         updateAutoFields();
@@ -667,9 +933,10 @@
     function goToTab(tabId) { openTab(null, tabId); }
 
     function getNextPeriodSpecs() {
-        const n = appData.length;
+        const rows = getAnnualRows();
+        const n = rows.length;
         if (n === 0) return { date: periodLabel(normYear(config.refYear) + 1), detail: "Année 1" };
-        const lastRow = appData[n - 1];
+        const lastRow = rows[n - 1];
         const parts = String(lastRow.date).split('-');
         let y = parseInt(parts[parts.length - 1]);
         if (isNaN(y)) y = (normYear(config.refYear) + n) % 100;
@@ -678,16 +945,37 @@
     }
 
     function updateAutoFields() {
-        const specs = editingDate
-            ? (appData.find(r => r.date === editingDate) || getNextPeriodSpecs())
-            : getNextPeriodSpecs();
-        document.getElementById('auto-date-badge').innerText = specs.date;
-        document.getElementById('auto-detail-badge').innerText = specs.detail;
-
+        const monthly = config.billingMode === 'mensuel';
         const formTitle = document.getElementById('saisie-form-title');
         const dateLabel = document.getElementById('auto-date-label');
         const submitBtn = document.getElementById('saisie-submit-btn');
         const cancelBtn = document.getElementById('saisie-cancel-btn');
+        const dateBadge = document.getElementById('auto-date-badge');
+        const detailBadge = document.getElementById('auto-detail-badge');
+
+        if (monthly) {
+            const ym = editingYm || nextYm();
+            dateBadge.innerText = ymToLabel(ym);
+            detailBadge.innerText = `→ période ${periodLabel(bucketEndYear(ym))}`;
+            if (editingYm) {
+                if (formTitle) formTitle.innerText = '✏️ Modifier un Mois';
+                if (dateLabel) dateLabel.innerText = 'Mois en cours de modification';
+                if (submitBtn) submitBtn.innerText = 'Mettre à jour le mois';
+                if (cancelBtn) cancelBtn.style.display = 'block';
+            } else {
+                if (formTitle) formTitle.innerText = '➕ Enregistrer un Mois';
+                if (dateLabel) dateLabel.innerText = 'Mois à ajouter';
+                if (submitBtn) submitBtn.innerText = 'Enregistrer le Mois';
+                if (cancelBtn) cancelBtn.style.display = 'none';
+            }
+            return;
+        }
+
+        const specs = editingDate
+            ? (appData.find(r => r.date === editingDate) || getNextPeriodSpecs())
+            : getNextPeriodSpecs();
+        dateBadge.innerText = specs.date;
+        detailBadge.innerText = specs.detail || specs.date;
         if (editingDate) {
             if (formTitle) formTitle.innerText = '✏️ Modifier une Période';
             if (dateLabel) dateLabel.innerText = 'Période en cours de modification';
@@ -704,10 +992,25 @@
     function editRow(date) {
         const row = appData.find(r => r.date === date);
         if (!row) return;
+        editingYm = null;
         editingDate = date;
         document.getElementById('form-facture').value = row.facture;
         document.getElementById('form-kwh').value = row.kwh;
         document.getElementById('form-revente').value = row.revente;
+        document.getElementById('form-months').value = (row.monthsCount && row.monthsCount < 12) ? row.monthsCount : '';
+        updateAutoFields();
+        const card = document.getElementById('saisie-form-card');
+        if (card) card.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    function editMonth(ym) {
+        const entry = monthlyData.find(e => e.ym === ym);
+        if (!entry) return;
+        editingDate = null;
+        editingYm = ym;
+        document.getElementById('form-facture').value = entry.facture;
+        document.getElementById('form-kwh').value = entry.kwh;
+        document.getElementById('form-revente').value = entry.revente;
         updateAutoFields();
         const card = document.getElementById('saisie-form-card');
         if (card) card.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -715,6 +1018,7 @@
 
     function cancelEditRow() {
         editingDate = null;
+        editingYm = null;
         document.getElementById('dataForm').reset();
         updateAutoFields();
     }
@@ -722,10 +1026,12 @@
     function initConfigInputs() {
         const setVal = (id, v) => { const el = document.getElementById(id); if (el) el.value = v; };
         setVal('config-invest', config.invest || '');
+        setVal('config-billing', config.billingMode);
         setVal('config-ref-month', config.refMonth);
         setVal('config-ref-year', config.refYear || '');
         setVal('config-ref-facture', config.refFacture || '');
         setVal('config-ref-kwh', config.refKwh || '');
+        setVal('config-inflation', config.inflationPct || '');
         setVal('config-co2', config.co2Factor);
         const resale = document.getElementById('config-resale');
         if (resale) resale.checked = !!config.hasResale;
@@ -733,17 +1039,25 @@
 
     function saveConfig() {
         config.invest = parseFloat(document.getElementById('config-invest').value) || 0;
+        config.billingMode = document.getElementById('config-billing').value === 'mensuel' ? 'mensuel' : 'annuel';
         config.refMonth = document.getElementById('config-ref-month').value || DEFAULT_CONFIG.refMonth;
         config.refYear = normYear(document.getElementById('config-ref-year').value);
         config.refFacture = parseFloat(document.getElementById('config-ref-facture').value) || 0;
         config.refKwh = parseInt(document.getElementById('config-ref-kwh').value) || 0;
         config.hasResale = document.getElementById('config-resale').checked;
+        const inflVal = parseFloat(document.getElementById('config-inflation').value);
+        config.inflationPct = isNaN(inflVal) ? 0 : inflVal;
         const co2Val = parseFloat(document.getElementById('config-co2').value);
         config.co2Factor = isNaN(co2Val) || co2Val < 0 ? DEFAULT_CONFIG.co2Factor : co2Val;
         saveAllToLocalStorage();
+        editingDate = null;
+        editingYm = null;
+        document.getElementById('dataForm').reset();
         applyResaleVisibility();
+        applyBillingModeVisibility();
         initSaisieTab();
         updateAutoFields();
+        populateAidPeriodSelect();
         calculateAndRender();
         alert("Configuration mise à jour !");
     }
@@ -756,9 +1070,27 @@
         if (gainsNote) gainsNote.innerText = config.hasResale ? 'Économies + revente' : 'Économies sur factures';
     }
 
+    /* Adapte le formulaire de saisie au mode de facturation. */
+    function applyBillingModeVisibility() {
+        const monthly = config.billingMode === 'mensuel';
+        const factureLabel = document.getElementById('form-facture-label');
+        if (factureLabel) factureLabel.innerText = monthly ? 'Facture Électricité Mensuelle TTC (€)' : 'Facture Électricité Annuelle TTC (€)';
+        const factureInput = document.getElementById('form-facture');
+        if (factureInput) factureInput.placeholder = monthly ? 'ex: 150.50' : 'ex: 1850.50';
+        const kwhInput = document.getElementById('form-kwh');
+        if (kwhInput) kwhInput.placeholder = monthly ? 'ex: 600' : 'ex: 7200';
+        const reventeInput = document.getElementById('form-revente');
+        if (reventeInput) reventeInput.placeholder = monthly ? 'ex: 90.00' : 'ex: 1100.00';
+        const monthsRow = document.getElementById('months-row');
+        if (monthsRow) monthsRow.style.display = monthly ? 'none' : '';
+        const monthlyCard = document.getElementById('monthly-history-card');
+        if (monthlyCard) monthlyCard.style.display = (monthly || monthlyData.length > 0) ? '' : 'none';
+    }
+
     function saveAllToLocalStorage() {
         safeSetItem(CONFIG_KEY, JSON.stringify(config));
         safeSetItem(DATA_KEY, JSON.stringify(appData));
+        safeSetItem(MONTHLY_KEY, JSON.stringify(monthlyData));
         safeSetItem(AIDS_KEY, JSON.stringify(oneTimeAids));
     }
 
@@ -767,8 +1099,10 @@
             safeClear();
             config = { ...DEFAULT_CONFIG };
             appData = [];
+            monthlyData = [];
             oneTimeAids = [];
             editingDate = null;
+            editingYm = null;
             document.getElementById('dataForm').reset();
             launchApplication();
         }
@@ -781,11 +1115,30 @@
         const facture = parseFloat(document.getElementById('form-facture').value) || 0;
         const kwh = parseInt(document.getElementById('form-kwh').value) || 0;
         const revente = config.hasResale ? (parseFloat(document.getElementById('form-revente').value) || 0) : 0;
+        // Période partielle (ex : installation en cours d'année) : 1 à 11 mois, sinon année pleine.
+        let monthsCount = parseInt(document.getElementById('form-months').value);
+        monthsCount = (!isNaN(monthsCount) && monthsCount >= 1 && monthsCount < 12) ? monthsCount : undefined;
+
+        // Mode mensuel : on enregistre un relevé de mois.
+        if (config.billingMode === 'mensuel' && !editingDate) {
+            const ym = editingYm || nextYm();
+            const wasEditing = !!editingYm;
+            monthlyData = monthlyData.filter(e => e.ym !== ym);
+            monthlyData.push({ ym, facture, kwh, revente });
+            monthlyData.sort((a, b) => a.ym < b.ym ? -1 : 1);
+            editingYm = null;
+            saveAllToLocalStorage();
+            document.getElementById('dataForm').reset();
+            initSaisieTab(); updateAutoFields(); populateAidPeriodSelect(); applyBillingModeVisibility();
+            alert(wasEditing ? 'Mois mis à jour !' : 'Mois enregistré !');
+            return;
+        }
 
         if (editingDate) {
             const idx = appData.findIndex(r => r.date === editingDate);
             const existing = idx >= 0 ? appData[idx] : null;
             const newRow = { date: editingDate, detail: existing ? existing.detail : editingDate, facture, kwh, revente };
+            if (monthsCount) newRow.monthsCount = monthsCount;
             if (idx >= 0) { appData[idx] = newRow; } else { appData.push(newRow); }
             editingDate = null;
             saveAllToLocalStorage(); document.getElementById('dataForm').reset();
@@ -795,6 +1148,7 @@
 
         const specs = getNextPeriodSpecs();
         const newRow = { date: specs.date, detail: specs.detail, facture, kwh, revente };
+        if (monthsCount) newRow.monthsCount = monthsCount;
         appData = appData.filter(r => r.date !== newRow.date); appData.push(newRow);
         saveAllToLocalStorage(); document.getElementById('dataForm').reset();
         initSaisieTab(); updateAutoFields(); populateAidPeriodSelect(); alert(`Données ajoutées !`);
@@ -808,23 +1162,32 @@
         }
     }
 
+    function deleteMonth(ym) {
+        if(confirm(`Supprimer le relevé de ${ymToLabel(ym)} ?`)) {
+            monthlyData = monthlyData.filter(e => e.ym !== ym); saveAllToLocalStorage();
+            if (editingYm === ym) { editingYm = null; document.getElementById('dataForm').reset(); }
+            initSaisieTab(); updateAutoFields(); populateAidPeriodSelect(); applyBillingModeVisibility();
+        }
+    }
+
     function populateAidPeriodSelect() {
         const select = document.getElementById('aid-period');
         if (!select) return;
         const currentValue = select.value;
-        if (appData.length === 0) {
+        const rows = getAnnualRows();
+        if (rows.length === 0) {
             select.innerHTML = '<option value="">aucune période</option>';
             return;
         }
-        select.innerHTML = appData.map(r => `<option value="${r.date}">${r.date}</option>`).join('');
-        if (appData.some(r => r.date === currentValue)) select.value = currentValue;
-        else select.value = appData[appData.length - 1].date;
+        select.innerHTML = rows.map(r => `<option value="${r.date}">${r.date}</option>`).join('');
+        if (rows.some(r => r.date === currentValue)) select.value = currentValue;
+        else select.value = rows[rows.length - 1].date;
     }
 
     function addOneTimeAid() {
         const amount = parseFloat(document.getElementById('aid-amount').value) || 0;
         const period = document.getElementById('aid-period').value;
-        if (!amount || !period) { alert("Renseignez un montant et une période (ajoutez d'abord une année dans Saisie)."); return; }
+        if (!amount || !period) { alert("Renseignez un montant et une période (ajoutez d'abord vos données dans Saisie)."); return; }
         oneTimeAids.push({ date: period, montant: amount });
         saveAllToLocalStorage();
         document.getElementById('aid-amount').value = '';
@@ -848,14 +1211,14 @@
         }
         container.innerHTML = oneTimeAids.map((aid, i) => `
             <div class="sim-row">
-                <span>${aid.date} : <strong style="color: #fbbf24;">${aid.montant.toFixed(2)} €</strong></span>
+                <span>${aid.date} : <strong style="color: var(--neon-amber);">${aid.montant.toFixed(2)} €</strong></span>
                 <button class="btn-danger-item" style="width: auto;" onclick="deleteAid(${i})">Supprimer</button>
             </div>
         `).join('');
     }
 
     function exportDataToFile() {
-        const packageData = { version: "2.0", exportDate: new Date().toISOString(), config, appData, oneTimeAids };
+        const packageData = { version: "2.1", exportDate: new Date().toISOString(), config, appData, monthlyData, oneTimeAids };
         const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(packageData, null, 2));
         const downloadAnchor = document.createElement('a'); downloadAnchor.setAttribute("href", dataStr);
         downloadAnchor.setAttribute("download", "sauvegarde-suivi-solaire.json");
@@ -866,10 +1229,13 @@
 
     function processRowCalculations(row, aideAmount = 0) {
         const tarif = row.kwh > 0 ? (row.facture / row.kwh) : 0;
+        const monthsCount = row.monthsCount || 12;
+        // Année incomplète (saisie mensuelle en cours) : référence proratisée.
+        const refKwhScaled = config.refKwh * (monthsCount / 12);
         let economies = 0;
         let kwhEconomises = 0;
-        if (config.refKwh > 0 && row.kwh < config.refKwh) {
-            kwhEconomises = config.refKwh - row.kwh;
+        if (config.refKwh > 0 && row.kwh < refKwhScaled) {
+            kwhEconomises = refKwhScaled - row.kwh;
             economies = kwhEconomises * tarif;
         }
         const revente = config.hasResale ? (row.revente || 0) : 0;
@@ -880,32 +1246,88 @@
     function buildProcessedRows() {
         const aidesParPeriode = {};
         oneTimeAids.forEach(aid => { aidesParPeriode[aid.date] = (aidesParPeriode[aid.date] || 0) + aid.montant; });
-        return appData.map(row => processRowCalculations(row, aidesParPeriode[row.date] || 0));
+        return getAnnualRows().map(row => processRowCalculations(row, aidesParPeriode[row.date] || 0));
+    }
+
+    /* Gain annuel récurrent : dernière année complète (annualisée si besoin), hors aides. */
+    function recurringGainBase(rows) {
+        if (!rows.length) return { base: 0, srcRow: null };
+        const complete = rows.filter(r => (r.monthsCount || 12) >= 12);
+        const src = complete.length ? complete[complete.length - 1] : rows[rows.length - 1];
+        const months = src.monthsCount || 12;
+        const base = (src.gainsAnnuels - src.aide) * (12 / months);
+        return { base: base > 0 ? base : 0, srcRow: src };
+    }
+
+    function elapsedYears(rows) {
+        return rows.reduce((acc, r) => acc + (r.monthsCount || 12) / 12, 0);
+    }
+
+    /* Estimation du point mort, en tenant compte de la hausse du prix de l'électricité. */
+    function estimateTotalYears(rows, totalGains) {
+        if (config.invest <= 0) return null;
+        let reste = config.invest - totalGains;
+        let years = elapsedYears(rows);
+        if (reste <= 0) return { done: true, years };
+        const { base } = recurringGainBase(rows);
+        if (base <= 0) return null;
+        const f = inflationFactor();
+        for (let i = 1; i <= 80 && reste > 0; i++) {
+            const g = base * Math.pow(f, i);
+            if (g <= 0) return null;
+            if (g >= reste) { years += reste / g; reste = 0; }
+            else { reste -= g; years += 1; }
+        }
+        return reste <= 0 ? { done: false, years } : null;
     }
 
     /* Ligne d'affichage de l'année de référence (issue de la configuration). */
     function buildRefDisplayRow() {
         return {
-            date: refLabel(), detail: "Réf.", facture: config.refFacture, kwh: config.refKwh,
+            date: refLabel(), detail: "Année de référence", facture: config.refFacture, kwh: config.refKwh,
             revente: 0, tarif: refTarif(), economies: 0, kwhEconomises: 0, aide: 0,
             gainsAnnuels: 0, isReal: true, isRef: true
         };
     }
 
     function initSaisieTab() {
+        // Table des périodes annuelles (manuelles = modifiables ; agrégats mensuels = lecture seule).
         const tbody = document.querySelector('#editTable tbody');
-        if(!tbody) return;
-        tbody.innerHTML = '';
-        if (appData.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="4"><p class="empty-note">Aucune période enregistrée pour l'instant.</p></td></tr>`;
-            return;
+        if (tbody) {
+            tbody.innerHTML = '';
+            const rows = buildProcessedRows();
+            if (rows.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="4"><p class="empty-note">Aucune période enregistrée pour l'instant.</p></td></tr>`;
+            } else {
+                rows.forEach(processed => {
+                    const isManual = appData.some(r => r.date === processed.date) && !processed.fromMonthly;
+                    const actions = isManual
+                        ? `<button class="btn-gray" style="width:auto; padding:4px 8px; font-size:11px;" onclick="editRow('${processed.date}')">✏️</button><button class="btn-danger-item" onclick="deleteRow('${processed.date}')">Supprimer</button>`
+                        : `<span style="font-size:10px; color:var(--text-muted);">via mensuel${(processed.monthsCount || 12) < 12 ? ` (${processed.monthsCount}/12)` : ''}</span>`;
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `<td style="padding: 8px 0;"><b>${processed.date}</b></td><td>${processed.facture.toFixed(0)}€</td><td style="color:var(--neon-green); font-weight:600;">${processed.gainsAnnuels.toFixed(0)}€</td><td style="display:flex; gap:6px; align-items:center;">${actions}</td>`;
+                    tbody.appendChild(tr);
+                });
+            }
         }
-        buildProcessedRows().forEach(processed => {
-            const tr = document.createElement('tr');
-            tr.style.borderBottom = "1px solid rgba(255,255,255,0.05)";
-            tr.innerHTML = `<td style="padding: 8px 0;"><b>${processed.date}</b></td><td>${processed.facture.toFixed(0)}€</td><td style="color:var(--neon-green); font-weight:600;">${processed.gainsAnnuels.toFixed(0)}€</td><td style="display:flex; gap:6px;"><button class="btn-gray" style="width:auto; padding:4px 8px; font-size:11px;" onclick="editRow('${processed.date}')">✏️</button><button class="btn-danger-item" onclick="deleteRow('${processed.date}')">Supprimer</button></td>`;
-            tbody.appendChild(tr);
-        });
+
+        // Table des relevés mensuels.
+        const mtbody = document.querySelector('#monthTable tbody');
+        if (mtbody) {
+            mtbody.innerHTML = '';
+            if (monthlyData.length === 0) {
+                mtbody.innerHTML = `<tr><td colspan="4"><p class="empty-note">Aucun relevé mensuel pour l'instant.</p></td></tr>`;
+            } else {
+                const canEdit = config.billingMode === 'mensuel';
+                monthlyData.forEach(e => {
+                    const actions = (canEdit ? `<button class="btn-gray" style="width:auto; padding:4px 8px; font-size:11px;" onclick="editMonth('${e.ym}')">✏️</button>` : '')
+                        + `<button class="btn-danger-item" onclick="deleteMonth('${e.ym}')">Supprimer</button>`;
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `<td style="padding: 8px 0;"><b>${ymToLabel(e.ym)}</b></td><td>${(parseFloat(e.facture) || 0).toFixed(0)}€</td><td>${parseInt(e.kwh) || 0}</td><td style="display:flex; gap:6px; align-items:center;">${actions}</td>`;
+                    mtbody.appendChild(tr);
+                });
+            }
+        }
     }
 
     function calculateAndRender() {
@@ -917,13 +1339,7 @@
 
         const processedRealRows = buildProcessedRows();
         const lastRealRow = processedRealRows.length > 0 ? processedRealRows[processedRealRows.length - 1] : null;
-
-        // Gain annuel récurrent estimé = gains de la dernière année, hors aides ponctuelles.
-        let derniereAnneeGains = 0;
-        if (lastRealRow) {
-            const gainRecurrent = lastRealRow.gainsAnnuels - lastRealRow.aide;
-            if (gainRecurrent > 0) derniereAnneeGains = gainRecurrent;
-        }
+        const { base: gainAnnuelBase, srcRow } = recurringGainBase(processedRealRows);
 
         const totalGainsReels = processedRealRows.reduce((acc, r) => acc + r.gainsAnnuels, 0);
         const resteAAmortir = Math.max(0, config.invest - totalGainsReels);
@@ -937,11 +1353,11 @@
         if (kpiRest) kpiRest.innerText = Math.round(resteAAmortir).toLocaleString('fr-FR') + " €";
 
         if (kpiYears) {
+            const est = estimateTotalYears(processedRealRows, totalGainsReels);
             if (resteAAmortir <= 0 && config.invest > 0) {
                 kpiYears.innerText = "✅ Amorti !";
-            } else if (derniereAnneeGains > 0) {
-                const tempsTotalEstime = processedRealRows.length + (resteAAmortir / derniereAnneeGains);
-                kpiYears.innerText = `~${tempsTotalEstime.toFixed(1)} ans`;
+            } else if (est) {
+                kpiYears.innerText = `~${est.years.toFixed(1)} ans`;
             } else {
                 kpiYears.innerText = "—";
             }
@@ -967,7 +1383,7 @@
 
         const kpiEcoMensuelle = document.getElementById('kpi-eco-mensuelle');
         if (kpiEcoMensuelle) {
-            kpiEcoMensuelle.innerText = Math.round(derniereAnneeGains / 12).toLocaleString('fr-FR') + " €";
+            kpiEcoMensuelle.innerText = Math.round(gainAnnuelBase / 12).toLocaleString('fr-FR') + " €";
         }
 
         const kpiCo2 = document.getElementById('kpi-co2');
@@ -982,24 +1398,44 @@
             }
         }
 
-        // Tableau de bord complet : référence + années réelles + projections.
+        // Tableau de bord complet : référence + années réelles + projections (avec inflation).
         const hasRef = config.refFacture > 0 || config.refKwh > 0;
         let fullDashboardData = (hasRef ? [buildRefDisplayRow()] : []).concat(processedRealRows.map(r => ({ ...r, isReal: true })));
 
-        if (lastRealRow && derniereAnneeGains > 0) {
+        if (lastRealRow && srcRow && gainAnnuelBase > 0) {
             let simulatedRenta = config.invest - totalGainsReels;
+            const f = inflationFactor();
             const parts = String(lastRealRow.date).split('-');
-            let lastDateYear = parseInt(parts[parts.length - 1]);
-            if (isNaN(lastDateYear)) lastDateYear = (normYear(config.refYear) + appData.length) % 100;
+            let lastDateYear = yearOfLabel(lastRealRow.date) || (normYear(config.refYear) + processedRealRows.length);
             const month = parts.length > 1 ? parts.slice(0, -1).join('-') : config.refMonth;
-            const projectedRevente = config.hasResale ? Math.max(0, derniereAnneeGains - lastRealRow.economies) : 0;
+            // Valeurs annualisées de la dernière année complète, base des projections.
+            const scale = 12 / (srcRow.monthsCount || 12);
+            const baseFacture = srcRow.facture * scale;
+            const baseKwh = Math.round(srcRow.kwh * scale);
+            const baseEco = srcRow.economies * scale;
+            const baseRevente = config.hasResale ? Math.max(0, gainAnnuelBase - baseEco) : 0;
+            const baseKwhEco = srcRow.kwhEconomises * scale;
 
             let indexProjection = 1;
             while (simulatedRenta > 0 && indexProjection <= 8) {
-                lastDateYear = (lastDateYear + 1) % 100;
-                simulatedRenta -= derniereAnneeGains;
-                const simulatedRow = { date: `${month}-${String(lastDateYear).padStart(2, '0')}`, detail: `+${indexProjection}a`, facture: lastRealRow.facture, kwh: lastRealRow.kwh, revente: projectedRevente };
-                fullDashboardData.push({ ...processRowCalculations(simulatedRow), isReal: false });
+                const factor = Math.pow(f, indexProjection);
+                const g = gainAnnuelBase * factor;
+                lastDateYear++;
+                simulatedRenta -= g;
+                const facture = baseFacture * factor;
+                const kwh = baseKwh;
+                fullDashboardData.push({
+                    date: `${month}-${String(lastDateYear % 100).padStart(2, '0')}`,
+                    detail: `+${indexProjection}a`,
+                    facture, kwh,
+                    revente: baseRevente * factor,
+                    economies: baseEco * factor,
+                    kwhEconomises: baseKwhEco,
+                    tarif: kwh > 0 ? facture / kwh : 0,
+                    aide: 0,
+                    gainsAnnuels: g,
+                    isReal: false
+                });
                 indexProjection++;
             }
         }
@@ -1012,7 +1448,7 @@
         if (compareExtraContainer) compareExtraContainer.innerHTML = '';
 
         if (fullDashboardData.length === 0) {
-            compareContainer.innerHTML = `<p class="empty-note">Renseignez vos paramètres puis saisissez vos années pour voir le comparatif.</p>`;
+            compareContainer.innerHTML = `<p class="empty-note">Renseignez vos paramètres puis saisissez vos données pour voir le comparatif.</p>`;
         }
 
         const maxGain = Math.max(...fullDashboardData.map(r => r.gainsAnnuels), 1);
@@ -1061,8 +1497,9 @@
                 if(breakdownChartInstance) breakdownChartInstance.destroy();
                 if(gainCompareChartInstance) gainCompareChartInstance.destroy();
 
-                Chart.defaults.color = '#94a3b8';
-                Chart.defaults.borderColor = 'rgba(255, 255, 255, 0.04)';
+                const theme = chartColors();
+                Chart.defaults.color = theme.tick;
+                Chart.defaults.borderColor = theme.grid;
 
                 const ctxRoi = document.getElementById('roiChart');
                 if(ctxRoi) {
@@ -1092,7 +1529,7 @@
                                     borderWidth: 2.5,
                                     pointRadius: 4,
                                     pointBackgroundColor: lineGradient,
-                                    pointBorderColor: '#0b0f19',
+                                    pointBorderColor: theme.pointBorder,
                                     pointBorderWidth: 1.5,
                                     backgroundColor: fillGradient,
                                     fill: true,
@@ -1101,7 +1538,7 @@
                                 {
                                     label: 'Seuil Investi',
                                     data: Array(fullDashboardData.length).fill(config.invest),
-                                    borderColor: '#475569',
+                                    borderColor: theme.seuil,
                                     borderDash: [4, 4],
                                     borderWidth: 1,
                                     pointRadius: 0,
@@ -1117,7 +1554,7 @@
                             scales: {
                                 x: { grid: { display: false } },
                                 y: {
-                                  grid: { color: 'rgba(255, 255, 255, 0.03)' },
+                                  grid: { color: theme.grid },
                                   ticks: { padding: 8 }
                                 }
                             }
@@ -1160,7 +1597,7 @@
                             scales: {
                                 x: { grid: { display: false } },
                                 y: {
-                                  grid: { color: 'rgba(255, 255, 255, 0.03)' },
+                                  grid: { color: theme.grid },
                                   ticks: { padding: 8 }
                                 }
                             }
@@ -1179,8 +1616,8 @@
                             datasets: [{
                                 label: 'Gain annuel',
                                 data: fullDashboardData.map(d => d.gainsAnnuels),
-                                backgroundColor: fullDashboardData.map(d => d.isReal ? 'rgba(74, 222, 128, 0.55)' : 'rgba(255, 255, 255, 0.12)'),
-                                borderColor: fullDashboardData.map(d => d.isReal ? '#4ade80' : 'rgba(255, 255, 255, 0.25)'),
+                                backgroundColor: fullDashboardData.map(d => d.isReal ? 'rgba(74, 222, 128, 0.55)' : (isLight() ? 'rgba(15, 23, 42, 0.10)' : 'rgba(255, 255, 255, 0.12)')),
+                                borderColor: fullDashboardData.map(d => d.isReal ? '#4ade80' : (isLight() ? 'rgba(15, 23, 42, 0.25)' : 'rgba(255, 255, 255, 0.25)')),
                                 borderWidth: 1.5,
                                 borderRadius: 4
                             }]
@@ -1192,7 +1629,7 @@
                             scales: {
                                 x: { grid: { display: false } },
                                 y: {
-                                  grid: { color: 'rgba(255, 255, 255, 0.03)' },
+                                  grid: { color: theme.grid },
                                   ticks: { padding: 8 }
                                 }
                             }
@@ -1203,7 +1640,7 @@
         }
     }
 
-    /* --- FONCTIONS JAVASCRIPT POUR LA MODAL DES GAINS --- */
+    /* --- MODAL DÉTAIL DES GAINS --- */
     function openGainsModal() {
         const modal = document.getElementById('gainsModal');
         const body = document.getElementById('modalGainsBody');
@@ -1237,7 +1674,7 @@
         }).join('');
 
         if (processedRealRows.length === 0) {
-            body.innerHTML = `<p class="empty-note">Aucune année saisie pour l'instant. Ajoutez vos périodes dans l'onglet ✍️ Saisie.</p>`;
+            body.innerHTML = `<p class="empty-note">Aucune donnée saisie pour l'instant. Ajoutez vos périodes dans l'onglet ✍️ Saisie.</p>`;
             modal.classList.add('active');
             return;
         }
@@ -1254,7 +1691,7 @@
                 </thead>
                 <tbody>
                     ${rowsHtml}
-                    <tr class="modal-total-row" style="border-top: 2px solid rgba(255,255,255,0.15); background-color: rgba(255,255,255,0.02)">
+                    <tr class="modal-total-row" style="border-top: 2px solid var(--border-glass);">
                         <td style="padding: 14px 6px;"><b>Cumulé</b></td>
                         <td style="text-align: right; color: var(--neon-blue); font-weight: 700;">${Math.round(totalEco).toLocaleString('fr-FR')} €</td>
                         ${showResale ? `<td style="text-align: right; color: var(--neon-orange); font-weight: 700;">${Math.round(totalRevente).toLocaleString('fr-FR')} €</td>` : ''}
@@ -1270,6 +1707,44 @@
 
     function closeGainsModal() {
         const modal = document.getElementById('gainsModal');
+        if (modal) modal.classList.remove('active');
+    }
+
+    /* --- MODAL BILAN PARTAGEABLE --- */
+    function openShareModal() {
+        const modal = document.getElementById('shareModal');
+        if (!modal) return;
+
+        const fmt = n => Math.round(n).toLocaleString('fr-FR');
+        const rows = buildProcessedRows();
+        const totalGains = rows.reduce((acc, r) => acc + r.gainsAnnuels, 0);
+        const reste = Math.max(0, config.invest - totalGains);
+        const pct = config.invest > 0 ? Math.min(100, (totalGains / config.invest) * 100) : 0;
+        const { base } = recurringGainBase(rows);
+        const est = estimateTotalYears(rows, totalGains);
+        const totalKwhEco = rows.reduce((acc, r) => acc + r.kwhEconomises, 0);
+        const co2Kg = totalKwhEco * (config.co2Factor / 1000);
+        const amorti = reste <= 0 && config.invest > 0;
+
+        const now = new Date();
+        document.getElementById('share-date').innerText = `${MOIS[now.getMonth()]} ${now.getFullYear()}`;
+        document.getElementById('share-pct').innerText = `${Math.round(pct)}%`;
+        const ring = document.getElementById('share-ring');
+        if (ring) ring.style.background = `conic-gradient(#4ade80 ${pct}%, rgba(255, 255, 255, 0.14) 0)`;
+        document.getElementById('share-headline').innerHTML = amorti
+            ? `🎉 Installation <b>100 % amortie</b> grâce au soleil !`
+            : (totalGains > 0 ? `Déjà <b>${fmt(totalGains)} €</b> de gains grâce au soleil` : `Mon aventure solaire commence !`);
+        document.getElementById('share-gains').innerText = `${fmt(totalGains)} €`;
+        document.getElementById('share-rest').innerText = `${fmt(reste)} €`;
+        document.getElementById('share-eco').innerText = `${fmt(base / 12)} €`;
+        document.getElementById('share-co2').innerText = `${fmt(co2Kg)} kg`;
+        document.getElementById('share-years').innerText = amorti ? '✅ atteint' : (est ? `~${est.years.toFixed(1)} ans` : '—');
+
+        modal.classList.add('active');
+    }
+
+    function closeShareModal() {
+        const modal = document.getElementById('shareModal');
         if (modal) modal.classList.remove('active');
     }
 
