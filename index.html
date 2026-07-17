@@ -474,6 +474,10 @@
                         <label>Revente Surplus Facturé (€)</label>
                         <input type="number" step="0.01" min="0" id="form-revente" placeholder="ex: 1100.00">
                     </div>
+                    <div class="row" id="months-row">
+                        <label>Mois couverts par cette période — laissez vide pour 12 (ex : 6 si l'installation a démarré en cours d'année)</label>
+                        <input type="number" min="1" max="12" id="form-months" placeholder="12">
+                    </div>
                     <button type="submit" class="btn-blue" id="saisie-submit-btn" style="margin-top: 8px;">Enregistrer l'Année</button>
                     <button type="button" class="btn-gray" id="saisie-cancel-btn" onclick="cancelEditRow()" style="margin-top: 8px; display: none;">Annuler la modification</button>
                 </form>
@@ -993,6 +997,7 @@
         document.getElementById('form-facture').value = row.facture;
         document.getElementById('form-kwh').value = row.kwh;
         document.getElementById('form-revente').value = row.revente;
+        document.getElementById('form-months').value = (row.monthsCount && row.monthsCount < 12) ? row.monthsCount : '';
         updateAutoFields();
         const card = document.getElementById('saisie-form-card');
         if (card) card.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -1076,6 +1081,8 @@
         if (kwhInput) kwhInput.placeholder = monthly ? 'ex: 600' : 'ex: 7200';
         const reventeInput = document.getElementById('form-revente');
         if (reventeInput) reventeInput.placeholder = monthly ? 'ex: 90.00' : 'ex: 1100.00';
+        const monthsRow = document.getElementById('months-row');
+        if (monthsRow) monthsRow.style.display = monthly ? 'none' : '';
         const monthlyCard = document.getElementById('monthly-history-card');
         if (monthlyCard) monthlyCard.style.display = (monthly || monthlyData.length > 0) ? '' : 'none';
     }
@@ -1108,6 +1115,9 @@
         const facture = parseFloat(document.getElementById('form-facture').value) || 0;
         const kwh = parseInt(document.getElementById('form-kwh').value) || 0;
         const revente = config.hasResale ? (parseFloat(document.getElementById('form-revente').value) || 0) : 0;
+        // Période partielle (ex : installation en cours d'année) : 1 à 11 mois, sinon année pleine.
+        let monthsCount = parseInt(document.getElementById('form-months').value);
+        monthsCount = (!isNaN(monthsCount) && monthsCount >= 1 && monthsCount < 12) ? monthsCount : undefined;
 
         // Mode mensuel : on enregistre un relevé de mois.
         if (config.billingMode === 'mensuel' && !editingDate) {
@@ -1128,6 +1138,7 @@
             const idx = appData.findIndex(r => r.date === editingDate);
             const existing = idx >= 0 ? appData[idx] : null;
             const newRow = { date: editingDate, detail: existing ? existing.detail : editingDate, facture, kwh, revente };
+            if (monthsCount) newRow.monthsCount = monthsCount;
             if (idx >= 0) { appData[idx] = newRow; } else { appData.push(newRow); }
             editingDate = null;
             saveAllToLocalStorage(); document.getElementById('dataForm').reset();
@@ -1137,6 +1148,7 @@
 
         const specs = getNextPeriodSpecs();
         const newRow = { date: specs.date, detail: specs.detail, facture, kwh, revente };
+        if (monthsCount) newRow.monthsCount = monthsCount;
         appData = appData.filter(r => r.date !== newRow.date); appData.push(newRow);
         saveAllToLocalStorage(); document.getElementById('dataForm').reset();
         initSaisieTab(); updateAutoFields(); populateAidPeriodSelect(); alert(`Données ajoutées !`);
@@ -1272,7 +1284,7 @@
     /* Ligne d'affichage de l'année de référence (issue de la configuration). */
     function buildRefDisplayRow() {
         return {
-            date: refLabel(), detail: "Réf.", facture: config.refFacture, kwh: config.refKwh,
+            date: refLabel(), detail: "Année de référence", facture: config.refFacture, kwh: config.refKwh,
             revente: 0, tarif: refTarif(), economies: 0, kwhEconomises: 0, aide: 0,
             gainsAnnuels: 0, isReal: true, isRef: true
         };
