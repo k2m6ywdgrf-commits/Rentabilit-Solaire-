@@ -454,18 +454,18 @@
             </div>
 
             <div class="kpi-grid">
-                <div class="card card-tint-blue icon-card kpi-card">
+                <div class="card card-tint-blue icon-card kpi-card" onclick="openStatModal('tarif')" style="cursor: pointer;">
                     <div class="icon-card-icon">⚡</div>
                     <div class="icon-card-body">
-                        <h2>Tarif Moyen</h2>
+                        <h2>Tarif Moyen ⓘ</h2>
                         <div class="kpi-value blue" id="kpi-tarif">0.00 €</div>
                         <div class="kpi-note" id="kpi-tarif-note">par kWh</div>
                     </div>
                 </div>
-                <div class="card card-tint-amber icon-card kpi-card">
+                <div class="card card-tint-amber icon-card kpi-card" onclick="openStatModal('eco')" style="cursor: pointer;">
                     <div class="icon-card-icon">🗓️</div>
                     <div class="icon-card-body">
-                        <h2>Économie Mensuelle</h2>
+                        <h2>Économie Mensuelle ⓘ</h2>
                         <div class="kpi-value amber" id="kpi-eco-mensuelle">0 €</div>
                         <div class="kpi-note">Moy. dernière année</div>
                     </div>
@@ -708,6 +708,18 @@
         </div>
         <div id="modalGainsBody">
             </div>
+    </div>
+</div>
+
+<div id="statModal" class="modal-overlay" onclick="closeStatModal()">
+    <div class="modal-content" onclick="event.stopPropagation()">
+        <div class="modal-header">
+            <h3 class="modal-title" id="statModalTitle">…</h3>
+            <button class="close-modal" onclick="closeStatModal()">✕</button>
+        </div>
+        <div style="position: relative; height: 220px;"><canvas id="statChart"></canvas></div>
+        <p style="font-size: 12px; color: var(--text-muted); text-align: center; margin-top: 12px;" id="statModalNote"></p>
+        <p style="font-size: 13px; font-weight: 600; text-align: center; margin-top: 6px;" id="statModalTrend"></p>
     </div>
 </div>
 
@@ -1056,8 +1068,11 @@
             return;
         }
 
+        // Libellé toujours recalculé (« Année n », « Année n · m/12 »), jamais
+        // le texte stocké avec la ligne — les données migrées de l'ancienne
+        // version pouvaient contenir des libellés personnalisés.
         const specs = editingDate
-            ? (appData.find(r => r.date === editingDate) || getNextPeriodSpecs())
+            ? (getAnnualRows().find(r => r.date === editingDate) || getNextPeriodSpecs())
             : getNextPeriodSpecs();
         dateBadge.innerText = specs.date;
         detailBadge.innerText = specs.detail || specs.date;
@@ -1225,8 +1240,8 @@
 
         if (editingDate) {
             const idx = appData.findIndex(r => r.date === editingDate);
-            const existing = idx >= 0 ? appData[idx] : null;
-            const newRow = { date: editingDate, detail: existing ? existing.detail : editingDate, facture, kwh, revente };
+            const derived = getAnnualRows().find(r => r.date === editingDate);
+            const newRow = { date: editingDate, detail: derived ? derived.detail.split(' · ')[0] : editingDate, facture, kwh, revente };
             if (monthsCount) newRow.monthsCount = monthsCount;
             if (idx >= 0) { appData[idx] = newRow; } else { appData.push(newRow); }
             editingDate = null;
@@ -1797,6 +1812,97 @@
     function closeGainsModal() {
         const modal = document.getElementById('gainsModal');
         if (modal) modal.classList.remove('active');
+    }
+
+    /* --- MODAL ÉVOLUTION (tarif moyen / économie mensuelle) --- */
+    let statChartInstance = null;
+
+    function openStatModal(kind) {
+        const modal = document.getElementById('statModal');
+        const title = document.getElementById('statModalTitle');
+        const note = document.getElementById('statModalNote');
+        const trend = document.getElementById('statModalTrend');
+        const canvas = document.getElementById('statChart');
+        if (!modal || !canvas) return;
+
+        const rows = buildProcessedRows();
+        let labels = [], values = [], chartType, color, bgColor, unit, decimals;
+
+        if (kind === 'tarif') {
+            title.innerText = '⚡ Évolution du Tarif Moyen';
+            note.innerText = 'Prix moyen payé par kWh (facture ÷ consommation), année de référence comprise.';
+            if (refTarif() > 0) { labels.push(refLabel()); values.push(refTarif()); }
+            rows.filter(r => r.tarif > 0).forEach(r => { labels.push(r.date); values.push(r.tarif); });
+            chartType = 'line'; color = '#38bdf8'; bgColor = 'rgba(56, 189, 248, 0.15)'; unit = ' €/kWh'; decimals = 3;
+        } else {
+            title.innerText = '🗓️ Évolution de l\'Économie Mensuelle';
+            note.innerText = config.hasResale
+                ? 'Gain moyen par mois pour chaque période (économies + revente), années partielles ramenées au mois.'
+                : 'Économie moyenne par mois pour chaque période, années partielles ramenées au mois.';
+            rows.forEach(r => { labels.push(r.date); values.push(r.gainsAnnuels / (r.monthsCount || 12)); });
+            chartType = 'bar'; color = '#fbbf24'; bgColor = 'rgba(251, 191, 36, 0.35)'; unit = ' €/mois'; decimals = 0;
+        }
+
+        if (values.length === 0) {
+            trend.innerText = '';
+            note.innerText = 'Aucune donnée pour l\'instant : renseignez vos paramètres et vos périodes.';
+        } else if (values.length >= 2 && values[0] > 0) {
+            const evo = ((values[values.length - 1] - values[0]) / values[0]) * 100;
+            const up = evo >= 0;
+            trend.style.color = kind === 'tarif' ? (up ? 'var(--neon-red)' : 'var(--neon-green)') : (up ? 'var(--neon-green)' : 'var(--neon-red)');
+            trend.innerText = `${up ? '▲' : '▼'} ${up ? '+' : ''}${evo.toFixed(0)} % entre ${labels[0]} et ${labels[labels.length - 1]}`;
+        } else {
+            trend.innerText = '';
+        }
+
+        if (statChartInstance) { statChartInstance.destroy(); statChartInstance = null; }
+        if (typeof Chart !== 'undefined' && values.length > 0) {
+            const theme = chartColors();
+            Chart.defaults.color = theme.tick;
+            statChartInstance = new Chart(canvas.getContext('2d'), {
+                type: chartType,
+                data: {
+                    labels,
+                    datasets: [{
+                        label: title.innerText,
+                        data: values,
+                        borderColor: color,
+                        backgroundColor: bgColor,
+                        borderWidth: chartType === 'line' ? 2.5 : 1.5,
+                        pointRadius: 4,
+                        pointBackgroundColor: color,
+                        pointBorderColor: theme.pointBorder,
+                        pointBorderWidth: 1.5,
+                        fill: chartType === 'line',
+                        tension: 0.25,
+                        borderRadius: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: { callbacks: { label: ctx => `${ctx.parsed.y.toFixed(decimals)}${unit}` } }
+                    },
+                    scales: {
+                        x: { grid: { display: false } },
+                        y: {
+                            grid: { color: theme.grid },
+                            ticks: { padding: 8, callback: v => decimals > 0 ? Number(v).toFixed(2) : Math.round(v) }
+                        }
+                    }
+                }
+            });
+        }
+
+        modal.classList.add('active');
+    }
+
+    function closeStatModal() {
+        const modal = document.getElementById('statModal');
+        if (modal) modal.classList.remove('active');
+        if (statChartInstance) { statChartInstance.destroy(); statChartInstance = null; }
     }
 
     /* --- MODAL BILAN PARTAGEABLE --- */
