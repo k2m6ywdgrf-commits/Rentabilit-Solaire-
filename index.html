@@ -24,15 +24,15 @@
     --neon-orange: #fbbf24;
     --neon-purple: #a78bfa;
   }
-  
+
   /* --- Comportement Application Native --- */
-  * { 
-    box-sizing: border-box; 
-    margin: 0; 
-    padding: 0; 
+  * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
     -webkit-tap-highlight-color: transparent;
   }
-  
+
   html {
     height: 100%;
     background-color: #000;
@@ -54,10 +54,10 @@
     user-select: none;
   }
 
-  input { -webkit-user-select: text; user-select: text; }
+  input, select { -webkit-user-select: text; user-select: text; }
 
   .container { max-width: 600px; margin: 0 auto; }
-  
+
   header { margin-bottom: 20px; padding-top: 4px; }
   h1 { font-size: 22px; font-weight: 700; letter-spacing: -0.5px; text-align: left; }
   .subtitle { color: var(--text-muted); font-size: 12px; margin-top: 4px; text-align: left; }
@@ -123,12 +123,28 @@
   /* FORMULAIRE & SAISIE */
   .row { display: flex; flex-direction: column; gap: 4px; margin-bottom: 12px; text-align: left; }
   .row label { font-size: 12px; color: var(--text-muted); font-weight: 500; }
-  .row input {
+  .row input, .row select {
     width: 100%; padding: 10px 12px; background-color: var(--input-bg);
     border: 1px solid rgba(255, 255, 255, 0.05); border-radius: 10px;
     font-size: 14px; color: #ffffff; outline: none; transition: all 0.2s;
   }
-  .row input:focus { border-color: var(--neon-blue); background-color: rgba(30, 41, 59, 0.9); }
+  .row input:focus, .row select:focus { border-color: var(--neon-blue); background-color: rgba(30, 41, 59, 0.9); }
+  .row-inline { flex-direction: row; gap: 10px; }
+  .row-inline > div { flex: 1; display: flex; flex-direction: column; gap: 4px; }
+
+  .switch-row { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; margin-bottom: 8px; }
+  .switch-row label { font-size: 13px; color: var(--text-main); font-weight: 500; }
+  .switch-row input[type="checkbox"] {
+    appearance: none; -webkit-appearance: none; width: 46px; height: 26px; border-radius: 13px;
+    background: rgba(255,255,255,0.12); position: relative; cursor: pointer; transition: background 0.2s;
+    flex-shrink: 0; border: 1px solid rgba(255,255,255,0.08);
+  }
+  .switch-row input[type="checkbox"]::after {
+    content: ''; position: absolute; top: 2px; left: 2px; width: 20px; height: 20px;
+    border-radius: 50%; background: #fff; transition: transform 0.2s;
+  }
+  .switch-row input[type="checkbox"]:checked { background: var(--neon-green); }
+  .switch-row input[type="checkbox"]:checked::after { transform: translateX(20px); }
 
   .sim-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid rgba(255, 255, 255, 0.05); font-size: 13px; }
   .sim-row span { color: var(--text-muted); }
@@ -145,7 +161,7 @@
   .tabs { display: flex; gap: 4px; margin-bottom: 14px; background: rgba(255, 255, 255, 0.04); padding: 4px; border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.02); }
   .tab-btn { flex: 1; padding: 8px 2px; border: none; background: transparent; color: var(--text-muted); font-weight: 500; font-size: 12px; border-radius: 8px; cursor: pointer; transition: all 0.2s; }
   .tab-btn.active { background: rgba(255, 255, 255, 0.12); color: #fff; font-weight: 600; backdrop-filter: blur(5px); -webkit-backdrop-filter: blur(5px); }
-  
+
   .tab-content { display: none; }
   .tab-content.active { display: block; }
 
@@ -161,7 +177,7 @@
   .compare-row { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.07); border-radius: 12px; padding: 10px 12px; }
   .compare-row.proj { border-style: dashed; opacity: 0.75; }
   .compare-row-top { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
-  .compare-date { font-weight: 700; font-size: 13px; width: 58px; flex-shrink: 0; }
+  .compare-date { font-weight: 700; font-size: 13px; min-width: 58px; flex-shrink: 0; }
   .compare-gain { margin-left: auto; color: var(--neon-green); font-weight: 700; font-size: 13px; }
   .compare-bar-track { height: 8px; border-radius: 5px; background: rgba(255,255,255,0.06); overflow: hidden; margin-bottom: 6px; }
   .compare-bar-fill { height: 100%; border-radius: 5px; background: linear-gradient(to right, #38bdf8, #4ade80); }
@@ -196,6 +212,8 @@
   .modal-table th, .modal-table td { padding: 10px 6px; border-bottom: 1px solid rgba(255, 255, 255, 0.05); }
   .modal-table th { color: var(--text-muted); font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 700; }
   .modal-total-row { font-weight: 700; background: rgba(255, 255, 255, 0.02); }
+
+  .empty-note { font-size: 12px; color: var(--text-muted); text-align: center; padding: 12px 0; }
 </style>
 </head>
 <body>
@@ -205,16 +223,25 @@
     <div id="main-application">
         <header>
             <h1>☀️ Amortissement Solaire</h1>
-            <p class="subtitle">Glissez horizontalement pour parcourir les années</p>
+            <p class="subtitle">Suivez la rentabilité de votre installation photovoltaïque</p>
         </header>
 
         <div class="tabs">
-            <button class="tab-btn active" onclick="openTab(event, 'graphiques')">📊 Rendement</button>
-            <button class="tab-btn" onclick="openTab(event, 'saisie')">✍️ Saisie</button>
-            <button class="tab-btn" onclick="openTab(event, 'config')">⚙️ Paramètres</button>
+            <button class="tab-btn active" data-tab="graphiques" onclick="openTab(event, 'graphiques')">📊 Rendement</button>
+            <button class="tab-btn" data-tab="saisie" onclick="openTab(event, 'saisie')">✍️ Saisie</button>
+            <button class="tab-btn" data-tab="config" onclick="openTab(event, 'config')">⚙️ Paramètres</button>
         </div>
 
         <div id="graphiques" class="tab-content active">
+            <div class="card card-tint-amber" id="setup-banner" style="display: none;">
+                <h2>👋 Bienvenue !</h2>
+                <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 12px;">
+                    Pour démarrer, renseignez le coût de votre installation et votre <b>année de référence</b>
+                    (facture totale et consommation en kWh <i>avant</i> le passage au solaire) dans les paramètres.
+                </p>
+                <button class="btn-blue" onclick="goToTab('config')">⚙️ Ouvrir les paramètres</button>
+            </div>
+
             <div class="card card-tint-purple icon-card kpi-card hero-card">
                 <div class="solar-panel-art" aria-hidden="true">
                     <svg viewBox="0 0 240 160" preserveAspectRatio="xMidYMid meet">
@@ -258,7 +285,7 @@
                     <div class="icon-card-body">
                         <h2>Gains Cumulés ⓘ</h2>
                         <div class="kpi-value green" id="kpi-gains">0 €</div>
-                        <div class="kpi-note">Économies + revente</div>
+                        <div class="kpi-note" id="kpi-gains-note">Économies + revente</div>
                     </div>
                 </div>
                 <div class="card card-tint-red icon-card kpi-card">
@@ -295,7 +322,7 @@
                 <div class="icon-card-body">
                     <h2>CO2 Évité (estimation)</h2>
                     <div class="kpi-value teal" id="kpi-co2">0 kg</div>
-                    <div class="kpi-note" id="kpi-co2-trees">Basé sur le kWh économisé et le mix électrique moyen français (~56 g/kWh)</div>
+                    <div class="kpi-note" id="kpi-co2-trees">Basé sur les kWh économisés</div>
                 </div>
             </div>
 
@@ -334,15 +361,15 @@
                     <hr class="divider">
                     <div class="row">
                         <label>Facture Électricité Annuelle TTC (€)</label>
-                        <input type="number" step="0.01" id="form-facture" placeholder="ex: 1850.50" required>
+                        <input type="number" step="0.01" min="0" id="form-facture" placeholder="ex: 1850.50" required>
                     </div>
                     <div class="row">
                         <label>Volume d'Énergie Consommé (kWh)</label>
-                        <input type="number" id="form-kwh" placeholder="ex: 7200" required>
+                        <input type="number" min="0" id="form-kwh" placeholder="ex: 7200" required>
                     </div>
-                    <div class="row">
+                    <div class="row" id="revente-row">
                         <label>Revente Surplus Facturé (€)</label>
-                        <input type="number" step="0.01" id="form-revente" placeholder="ex: 1100.00" required>
+                        <input type="number" step="0.01" min="0" id="form-revente" placeholder="ex: 1100.00">
                     </div>
                     <button type="submit" class="btn-blue" id="saisie-submit-btn" style="margin-top: 8px;">Enregistrer l'Année</button>
                     <button type="button" class="btn-gray" id="saisie-cancel-btn" onclick="cancelEditRow()" style="margin-top: 8px; display: none;">Annuler la modification</button>
@@ -368,10 +395,66 @@
         </div>
 
         <div id="config" class="tab-content">
-            <div class="card config-card">
-                <h2>💾 Sauvegarde iCloud</h2>
+            <div class="card config-params-card">
+                <h2>⚙️ Mon Installation</h2>
+                <div class="row">
+                    <label>Coût d'investissement initial (€)</label>
+                    <input type="number" step="0.01" min="0" id="config-invest" placeholder="ex: 12000">
+                </div>
+                <div class="switch-row">
+                    <label for="config-resale">☀️ Revente du surplus (injection réseau)</label>
+                    <input type="checkbox" id="config-resale" checked>
+                </div>
+                <hr class="divider">
+                <h2>📅 Année de Référence (avant solaire)</h2>
                 <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 12px;">
-                    Exportez votre fichier pour le placer dans votre répertoire <b>Fichiers</b> ou iCloud Drive.
+                    La dernière année complète <b>avant</b> l'installation : elle sert de base de comparaison pour calculer vos économies.
+                </p>
+                <div class="row row-inline">
+                    <div>
+                        <label>Mois du relevé annuel</label>
+                        <select id="config-ref-month">
+                            <option value="janvier">janvier</option>
+                            <option value="février">février</option>
+                            <option value="mars">mars</option>
+                            <option value="avril">avril</option>
+                            <option value="mai">mai</option>
+                            <option value="juin">juin</option>
+                            <option value="juillet">juillet</option>
+                            <option value="août">août</option>
+                            <option value="septembre">septembre</option>
+                            <option value="octobre">octobre</option>
+                            <option value="novembre">novembre</option>
+                            <option value="décembre">décembre</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label>Année</label>
+                        <input type="number" min="1990" max="2100" id="config-ref-year" placeholder="ex: 2023">
+                    </div>
+                </div>
+                <div class="row">
+                    <label>Facture totale de l'année de référence TTC (€)</label>
+                    <input type="number" step="0.01" min="0" id="config-ref-facture" placeholder="ex: 1890.00">
+                </div>
+                <div class="row">
+                    <label>Consommation de l'année de référence (kWh)</label>
+                    <input type="number" min="0" id="config-ref-kwh" placeholder="ex: 9500">
+                </div>
+                <hr class="divider">
+                <div class="row">
+                    <label>Facteur d'émission CO2 évité (g/kWh) — 56 pour le mix français, ~400 pour le mix européen</label>
+                    <input type="number" step="1" min="0" id="config-co2" placeholder="ex: 56">
+                </div>
+                <button class="btn-blue" onclick="saveConfig()" style="margin-top: 8px;">Appliquer les modifications</button>
+                <hr class="divider">
+                <button class="btn-gray" onclick="resetToDefault()">Tout réinitialiser (efface les données)</button>
+            </div>
+
+            <div class="card config-card">
+                <h2>💾 Sauvegarde</h2>
+                <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 12px;">
+                    Exportez votre fichier pour le conserver dans <b>Fichiers</b>, iCloud Drive, Google Drive ou tout autre espace de stockage.
                 </p>
                 <button class="btn-blue" onclick="exportDataToFile()">
                     💾 Exporter le fichier JSON
@@ -384,21 +467,6 @@
                 <button class="btn-gray" onclick="document.getElementById('importFile').click()">
                     📂 Importer une sauvegarde
                 </button>
-            </div>
-
-            <div class="card config-params-card">
-                <h2>⚙️ Paramètres de Base</h2>
-                <div class="row">
-                    <label>Coût d'investissement initial (€)</label>
-                    <input type="number" step="0.01" id="config-invest" value="14430.00">
-                </div>
-                <div class="row">
-                    <label>Consommation référence de base (kWh)</label>
-                    <input type="number" id="config-ref-kwh" value="10225">
-                </div>
-                <button class="btn-blue" onclick="saveConfig()" style="margin-top: 8px;">Appliquer les modifications</button>
-                <hr class="divider">
-                <button class="btn-gray" onclick="resetToDefault()">Réinitialiser d'origine</button>
             </div>
 
             <div class="card card-tint-amber config-aids-card">
@@ -435,15 +503,24 @@
     function safeSetItem(key, value) { try { localStorage.setItem(key, value); } catch(e) {} }
     function safeClear() { try { localStorage.clear(); } catch(e) {} }
 
-    const defaultData = [
-        { date: "juin-23", detail: "Réf.", facture: 1893.05, kwh: 10225, revente: 0 },
-        { date: "juin-24", detail: "Année 1", facture: 2309.18, kwh: 9882, revente: 0 },
-        { date: "juin-25", detail: "Année 2", facture: 1869.64, kwh: 7375, revente: 1082.70 }
-    ];
+    /* --- CONFIGURATION : plus aucune donnée personnelle codée en dur.
+       Chaque utilisateur renseigne son installation dans l'onglet Paramètres. --- */
+    const CONFIG_KEY = 'solar_config_v2';
+    const DATA_KEY = 'solar_data_v2';
+    const AIDS_KEY = 'solar_aids_v2';
 
-    let appData = [...defaultData];
-    let appInvest = 14430.00;
-    let refKwh = 10225;
+    const DEFAULT_CONFIG = {
+        invest: 0,             // coût de l'installation (€)
+        refMonth: 'janvier',   // mois du relevé annuel
+        refYear: new Date().getFullYear() - 1,
+        refFacture: 0,         // facture totale de l'année de référence (€)
+        refKwh: 0,             // consommation de l'année de référence (kWh)
+        hasResale: true,       // revente du surplus activée ou non
+        co2Factor: 56          // g de CO2 évité par kWh économisé
+    };
+
+    let config = { ...DEFAULT_CONFIG };
+    let appData = [];        // années post-installation uniquement (la référence vit dans config)
     let oneTimeAids = [];
     let editingDate = null;
 
@@ -451,6 +528,26 @@
     let breakdownChartInstance = null;
     let gainCompareChartInstance = null;
     let projectedYearsExpanded = false;
+
+    function normYear(y) {
+        y = parseInt(y);
+        if (isNaN(y)) return new Date().getFullYear() - 1;
+        return y < 100 ? 2000 + y : y;
+    }
+
+    function periodLabel(fullYear) {
+        return `${config.refMonth}-${String(fullYear % 100).padStart(2, '0')}`;
+    }
+
+    function refLabel() { return periodLabel(normYear(config.refYear)); }
+
+    function isConfigured() {
+        return config.invest > 0 && config.refFacture > 0 && config.refKwh > 0;
+    }
+
+    function refTarif() {
+        return config.refKwh > 0 ? config.refFacture / config.refKwh : 0;
+    }
 
     function toggleProjectedYears() {
         projectedYearsExpanded = !projectedYearsExpanded;
@@ -461,16 +558,52 @@
     }
 
     function loadLocalData() {
-        const localStoreData = safeGetItem('solar_data_cloud_v1');
-        if(localStoreData) {
+        const rawConfig = safeGetItem(CONFIG_KEY);
+        if (rawConfig) {
             try {
-                appData = JSON.parse(localStoreData);
-                appInvest = parseFloat(safeGetItem('solar_invest_cloud_v1')) || 14430.00;
-                refKwh = parseInt(safeGetItem('solar_ref_kwh_cloud_v1')) || 10225;
-                oneTimeAids = JSON.parse(safeGetItem('solar_aids_v1')) || [];
+                config = { ...DEFAULT_CONFIG, ...JSON.parse(rawConfig) };
+                appData = JSON.parse(safeGetItem(DATA_KEY)) || [];
+                oneTimeAids = JSON.parse(safeGetItem(AIDS_KEY)) || [];
             } catch(e) {}
+        } else {
+            migrateFromV1();
         }
         launchApplication();
+    }
+
+    /* Migration transparente des données de l'ancienne version (v1) :
+       la ligne "Réf." devient l'année de référence en configuration. */
+    function migrateFromV1() {
+        const v1 = safeGetItem('solar_data_cloud_v1');
+        if (!v1) return;
+        try {
+            const rows = JSON.parse(v1) || [];
+            const invest = parseFloat(safeGetItem('solar_invest_cloud_v1')) || 0;
+            const refKwhV1 = parseInt(safeGetItem('solar_ref_kwh_cloud_v1')) || 0;
+            const aids = JSON.parse(safeGetItem('solar_aids_v1')) || [];
+            applyV1Payload(rows, invest, refKwhV1, aids);
+            saveAllToLocalStorage();
+        } catch(e) {}
+    }
+
+    function applyV1Payload(rows, invest, refKwhV1, aids) {
+        rows = Array.isArray(rows) ? rows : [];
+        const refIdx = rows.findIndex(r => (r.detail || '').toLowerCase().indexOf('réf') === 0 || (r.detail || '').toLowerCase().indexOf('ref') === 0);
+        const refRow = refIdx >= 0 ? rows[refIdx] : null;
+        config = { ...DEFAULT_CONFIG, invest: invest || 0 };
+        if (refRow) {
+            config.refFacture = parseFloat(refRow.facture) || 0;
+            config.refKwh = parseInt(refRow.kwh) || refKwhV1;
+            const parts = String(refRow.date || '').split('-');
+            if (parts.length > 1) {
+                config.refMonth = parts.slice(0, -1).join('-') || DEFAULT_CONFIG.refMonth;
+                config.refYear = normYear(parts[parts.length - 1]);
+            }
+        } else {
+            config.refKwh = refKwhV1;
+        }
+        appData = rows.filter((r, i) => i !== refIdx);
+        oneTimeAids = Array.isArray(aids) ? aids : [];
     }
 
     function importDataFromFile(event) {
@@ -481,17 +614,21 @@
         reader.onload = function(e) {
             try {
                 const parsed = JSON.parse(e.target.result);
-                if (parsed.appData && parsed.appInvest && parsed.refKwh) {
-                    appData = parsed.appData;
-                    appInvest = parsed.appInvest;
-                    refKwh = parsed.refKwh;
-                    oneTimeAids = parsed.oneTimeAids || [];
-                    saveAllToLocalStorage();
-                    initSaisieTab();
-                    calculateAndRender();
-                    updateAutoFields();
-                    alert("Données importées avec succès !");
-                } else { alert("Fichier invalide."); }
+                if (parsed.config && parsed.appData) {
+                    // Format v2
+                    config = { ...DEFAULT_CONFIG, ...parsed.config };
+                    appData = Array.isArray(parsed.appData) ? parsed.appData : [];
+                    oneTimeAids = Array.isArray(parsed.oneTimeAids) ? parsed.oneTimeAids : [];
+                } else if (parsed.appData) {
+                    // Ancien format v1
+                    applyV1Payload(parsed.appData, parseFloat(parsed.appInvest) || 0, parseInt(parsed.refKwh) || 0, parsed.oneTimeAids || []);
+                } else {
+                    alert("Fichier invalide.");
+                    return;
+                }
+                saveAllToLocalStorage();
+                launchApplication();
+                alert("Données importées avec succès !");
             } catch (err) { alert("Erreur lors de la lecture."); }
         };
         reader.readAsText(file);
@@ -499,6 +636,8 @@
     }
 
     function launchApplication() {
+        initConfigInputs();
+        applyResaleVisibility();
         initSaisieTab();
         calculateAndRender();
         updateAutoFields();
@@ -509,26 +648,33 @@
     function openTab(event, tabId) {
         document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
         document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
-        
+
         const targetTab = document.getElementById(tabId);
         if (targetTab) targetTab.classList.add('active');
-        
+
         const evtTarget = event || window.event;
         if (evtTarget && evtTarget.currentTarget) {
             evtTarget.currentTarget.classList.add('active');
+        } else {
+            const btn = document.querySelector(`.tab-btn[data-tab="${tabId}"]`);
+            if (btn) btn.classList.add('active');
         }
-        
+
         if(tabId === 'graphiques') calculateAndRender();
         if(tabId === 'saisie') updateAutoFields();
     }
 
+    function goToTab(tabId) { openTab(null, tabId); }
+
     function getNextPeriodSpecs() {
-        if (appData.length === 0) return { date: "juin-23", detail: "Réf." };
-        let lastRow = appData[appData.length - 1];
-        let parts = lastRow.date.split('-');
-        let nextYearNum = 24;
-        if (parts.length > 1) { nextYearNum = parseInt(parts[1]) + 1; }
-        return { date: `juin-${nextYearNum}`, detail: `Année ${appData.length}` };
+        const n = appData.length;
+        if (n === 0) return { date: periodLabel(normYear(config.refYear) + 1), detail: "Année 1" };
+        const lastRow = appData[n - 1];
+        const parts = String(lastRow.date).split('-');
+        let y = parseInt(parts[parts.length - 1]);
+        if (isNaN(y)) y = (normYear(config.refYear) + n) % 100;
+        const month = parts.length > 1 ? parts.slice(0, -1).join('-') : config.refMonth;
+        return { date: `${month}-${String((y + 1) % 100).padStart(2, '0')}`, detail: `Année ${n + 1}` };
     }
 
     function updateAutoFields() {
@@ -573,28 +719,58 @@
         updateAutoFields();
     }
 
+    function initConfigInputs() {
+        const setVal = (id, v) => { const el = document.getElementById(id); if (el) el.value = v; };
+        setVal('config-invest', config.invest || '');
+        setVal('config-ref-month', config.refMonth);
+        setVal('config-ref-year', config.refYear || '');
+        setVal('config-ref-facture', config.refFacture || '');
+        setVal('config-ref-kwh', config.refKwh || '');
+        setVal('config-co2', config.co2Factor);
+        const resale = document.getElementById('config-resale');
+        if (resale) resale.checked = !!config.hasResale;
+    }
+
     function saveConfig() {
-        appInvest = parseFloat(document.getElementById('config-invest').value) || 0;
-        refKwh = parseInt(document.getElementById('config-ref-kwh').value) || 10225;
+        config.invest = parseFloat(document.getElementById('config-invest').value) || 0;
+        config.refMonth = document.getElementById('config-ref-month').value || DEFAULT_CONFIG.refMonth;
+        config.refYear = normYear(document.getElementById('config-ref-year').value);
+        config.refFacture = parseFloat(document.getElementById('config-ref-facture').value) || 0;
+        config.refKwh = parseInt(document.getElementById('config-ref-kwh').value) || 0;
+        config.hasResale = document.getElementById('config-resale').checked;
+        const co2Val = parseFloat(document.getElementById('config-co2').value);
+        config.co2Factor = isNaN(co2Val) || co2Val < 0 ? DEFAULT_CONFIG.co2Factor : co2Val;
         saveAllToLocalStorage();
-        alert("Configuration mise à jour !");
+        applyResaleVisibility();
+        initSaisieTab();
+        updateAutoFields();
         calculateAndRender();
+        alert("Configuration mise à jour !");
+    }
+
+    /* Affiche ou masque tout ce qui concerne la revente du surplus. */
+    function applyResaleVisibility() {
+        const reventeRow = document.getElementById('revente-row');
+        if (reventeRow) reventeRow.style.display = config.hasResale ? '' : 'none';
+        const gainsNote = document.getElementById('kpi-gains-note');
+        if (gainsNote) gainsNote.innerText = config.hasResale ? 'Économies + revente' : 'Économies sur factures';
     }
 
     function saveAllToLocalStorage() {
-        safeSetItem('solar_data_cloud_v1', JSON.stringify(appData));
-        safeSetItem('solar_invest_cloud_v1', appInvest);
-        safeSetItem('solar_ref_kwh_cloud_v1', refKwh);
-        safeSetItem('solar_aids_v1', JSON.stringify(oneTimeAids));
+        safeSetItem(CONFIG_KEY, JSON.stringify(config));
+        safeSetItem(DATA_KEY, JSON.stringify(appData));
+        safeSetItem(AIDS_KEY, JSON.stringify(oneTimeAids));
     }
 
     function resetToDefault() {
-        if(confirm("Réinitialiser les données ?")) {
-            safeClear(); appData = [...defaultData]; appInvest = 14430.00; refKwh = 10225; oneTimeAids = [];
-            document.getElementById('config-invest').value = "14430.00";
-            document.getElementById('config-ref-kwh').value = "10225";
-            initSaisieTab(); calculateAndRender(); updateAutoFields();
-            populateAidPeriodSelect(); renderAidsList();
+        if(confirm("Réinitialiser l'application ? Toutes vos données et paramètres seront effacés.")) {
+            safeClear();
+            config = { ...DEFAULT_CONFIG };
+            appData = [];
+            oneTimeAids = [];
+            editingDate = null;
+            document.getElementById('dataForm').reset();
+            launchApplication();
         }
     }
 
@@ -604,7 +780,7 @@
 
         const facture = parseFloat(document.getElementById('form-facture').value) || 0;
         const kwh = parseInt(document.getElementById('form-kwh').value) || 0;
-        const revente = parseFloat(document.getElementById('form-revente').value) || 0;
+        const revente = config.hasResale ? (parseFloat(document.getElementById('form-revente').value) || 0) : 0;
 
         if (editingDate) {
             const idx = appData.findIndex(r => r.date === editingDate);
@@ -636,15 +812,19 @@
         const select = document.getElementById('aid-period');
         if (!select) return;
         const currentValue = select.value;
+        if (appData.length === 0) {
+            select.innerHTML = '<option value="">aucune période</option>';
+            return;
+        }
         select.innerHTML = appData.map(r => `<option value="${r.date}">${r.date}</option>`).join('');
         if (appData.some(r => r.date === currentValue)) select.value = currentValue;
-        else if (appData.length > 0) select.value = appData[appData.length - 1].date;
+        else select.value = appData[appData.length - 1].date;
     }
 
     function addOneTimeAid() {
         const amount = parseFloat(document.getElementById('aid-amount').value) || 0;
         const period = document.getElementById('aid-period').value;
-        if (!amount || !period) { alert("Renseignez un montant et une période."); return; }
+        if (!amount || !period) { alert("Renseignez un montant et une période (ajoutez d'abord une année dans Saisie)."); return; }
         oneTimeAids.push({ date: period, montant: amount });
         saveAllToLocalStorage();
         document.getElementById('aid-amount').value = '';
@@ -675,40 +855,52 @@
     }
 
     function exportDataToFile() {
-        const packageData = { version: "1.0", exportDate: new Date().toISOString(), appInvest, refKwh, appData, oneTimeAids };
+        const packageData = { version: "2.0", exportDate: new Date().toISOString(), config, appData, oneTimeAids };
         const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(packageData, null, 2));
         const downloadAnchor = document.createElement('a'); downloadAnchor.setAttribute("href", dataStr);
         downloadAnchor.setAttribute("download", "sauvegarde-suivi-solaire.json");
         document.body.appendChild(downloadAnchor); downloadAnchor.click(); downloadAnchor.remove();
     }
 
-    const CO2_KG_PAR_KWH = 0.056;
     const CO2_KG_PAR_ARBRE_PAR_AN = 25;
 
-    function processRowCalculations(row, isReferencePeriod, aideAmount = 0) {
+    function processRowCalculations(row, aideAmount = 0) {
         const tarif = row.kwh > 0 ? (row.facture / row.kwh) : 0;
         let economies = 0;
         let kwhEconomises = 0;
-        if (!isReferencePeriod && row.kwh < refKwh) {
-            kwhEconomises = refKwh - row.kwh;
+        if (config.refKwh > 0 && row.kwh < config.refKwh) {
+            kwhEconomises = config.refKwh - row.kwh;
             economies = kwhEconomises * tarif;
         }
-        if(row.date === "juin-24" && row.facture === 2309.18) { economies = 80.15; }
-        const gainsAnnuels = economies + row.revente;
-        return { ...row, tarif, economies, kwhEconomises, aide: aideAmount, gainsAnnuels };
+        const revente = config.hasResale ? (row.revente || 0) : 0;
+        const gainsAnnuels = economies + revente;
+        return { ...row, revente, tarif, economies, kwhEconomises, aide: aideAmount, gainsAnnuels };
+    }
+
+    function buildProcessedRows() {
+        const aidesParPeriode = {};
+        oneTimeAids.forEach(aid => { aidesParPeriode[aid.date] = (aidesParPeriode[aid.date] || 0) + aid.montant; });
+        return appData.map(row => processRowCalculations(row, aidesParPeriode[row.date] || 0));
+    }
+
+    /* Ligne d'affichage de l'année de référence (issue de la configuration). */
+    function buildRefDisplayRow() {
+        return {
+            date: refLabel(), detail: "Réf.", facture: config.refFacture, kwh: config.refKwh,
+            revente: 0, tarif: refTarif(), economies: 0, kwhEconomises: 0, aide: 0,
+            gainsAnnuels: 0, isReal: true, isRef: true
+        };
     }
 
     function initSaisieTab() {
-        const cInv = document.getElementById('config-invest');
-        const cRef = document.getElementById('config-ref-kwh');
-        if (cInv) cInv.value = appInvest;
-        if (cRef) cRef.value = refKwh;
-        
-        const tbody = document.querySelector('#editTable tbody'); 
+        const tbody = document.querySelector('#editTable tbody');
         if(!tbody) return;
         tbody.innerHTML = '';
-        appData.forEach(row => {
-            const processed = processRowCalculations(row, row.date === "juin-23");
+        if (appData.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="4"><p class="empty-note">Aucune période enregistrée pour l'instant.</p></td></tr>`;
+            return;
+        }
+        buildProcessedRows().forEach(processed => {
             const tr = document.createElement('tr');
             tr.style.borderBottom = "1px solid rgba(255,255,255,0.05)";
             tr.innerHTML = `<td style="padding: 8px 0;"><b>${processed.date}</b></td><td>${processed.facture.toFixed(0)}€</td><td style="color:var(--neon-green); font-weight:600;">${processed.gainsAnnuels.toFixed(0)}€</td><td style="display:flex; gap:6px;"><button class="btn-gray" style="width:auto; padding:4px 8px; font-size:11px;" onclick="editRow('${processed.date}')">✏️</button><button class="btn-danger-item" onclick="deleteRow('${processed.date}')">Supprimer</button></td>`;
@@ -717,26 +909,24 @@
     }
 
     function calculateAndRender() {
+        const banner = document.getElementById('setup-banner');
+        if (banner) banner.style.display = isConfigured() ? 'none' : 'block';
+
         const kpiInv = document.getElementById('kpi-invest');
-        if (kpiInv) kpiInv.innerText = Math.round(appInvest).toLocaleString('fr-FR') + " €";
-        
-        const aidesParPeriode = {};
-        oneTimeAids.forEach(aid => { aidesParPeriode[aid.date] = (aidesParPeriode[aid.date] || 0) + aid.montant; });
+        if (kpiInv) kpiInv.innerText = Math.round(config.invest).toLocaleString('fr-FR') + " €";
 
-        let processedRealRows = appData.map(row => processRowCalculations(row, row.date === "juin-23", aidesParPeriode[row.date] || 0));
+        const processedRealRows = buildProcessedRows();
+        const lastRealRow = processedRealRows.length > 0 ? processedRealRows[processedRealRows.length - 1] : null;
 
-        let lastRealRow = processedRealRows.length > 0 ? processedRealRows[processedRealRows.length - 1] : null;
-
-        let derniereAnneeGains = 1805.20;
-        if(lastRealRow) {
-            let gainRecurrent = lastRealRow.gainsAnnuels - lastRealRow.aide;
-            if(gainRecurrent > 0) derniereAnneeGains = gainRecurrent;
+        // Gain annuel récurrent estimé = gains de la dernière année, hors aides ponctuelles.
+        let derniereAnneeGains = 0;
+        if (lastRealRow) {
+            const gainRecurrent = lastRealRow.gainsAnnuels - lastRealRow.aide;
+            if (gainRecurrent > 0) derniereAnneeGains = gainRecurrent;
         }
 
-        let totalGainsReels = processedRealRows.reduce((acc, r) => acc + r.gainsAnnuels, 0);
-        let resteAAmortir = Math.max(0, appInvest - totalGainsReels);
-        let anneesSaisies = processedRealRows.filter(r => r.gainsAnnuels > 0).length || 1;
-        let tempsTotalEstime = anneesSaisies + (resteAAmortir / derniereAnneeGains);
+        const totalGainsReels = processedRealRows.reduce((acc, r) => acc + r.gainsAnnuels, 0);
+        const resteAAmortir = Math.max(0, config.invest - totalGainsReels);
 
         const kpiGains = document.getElementById('kpi-gains');
         const kpiRest = document.getElementById('kpi-rest');
@@ -745,17 +935,34 @@
 
         if (kpiGains) kpiGains.innerText = Math.round(totalGainsReels).toLocaleString('fr-FR') + " €";
         if (kpiRest) kpiRest.innerText = Math.round(resteAAmortir).toLocaleString('fr-FR') + " €";
-        if (kpiYears) kpiYears.innerText = `~${tempsTotalEstime.toFixed(1)} ans`;
 
-        let pPct = appInvest > 0 ? (totalGainsReels / appInvest) * 100 : 0;
+        if (kpiYears) {
+            if (resteAAmortir <= 0 && config.invest > 0) {
+                kpiYears.innerText = "✅ Amorti !";
+            } else if (derniereAnneeGains > 0) {
+                const tempsTotalEstime = processedRealRows.length + (resteAAmortir / derniereAnneeGains);
+                kpiYears.innerText = `~${tempsTotalEstime.toFixed(1)} ans`;
+            } else {
+                kpiYears.innerText = "—";
+            }
+        }
+
+        const pPct = config.invest > 0 ? (totalGainsReels / config.invest) * 100 : 0;
         if (kpiGauge) kpiGauge.style.width = Math.min(100, pPct) + "%";
 
         const kpiTarif = document.getElementById('kpi-tarif');
         const kpiTarifNote = document.getElementById('kpi-tarif-note');
-        if (kpiTarif && processedRealRows.length > 0) {
-            const dernierTarif = processedRealRows[processedRealRows.length - 1];
-            kpiTarif.innerText = dernierTarif.tarif.toFixed(2) + " €";
-            if (kpiTarifNote) kpiTarifNote.innerText = `par kWh, période ${dernierTarif.date}`;
+        if (kpiTarif) {
+            if (lastRealRow && lastRealRow.tarif > 0) {
+                kpiTarif.innerText = lastRealRow.tarif.toFixed(2) + " €";
+                if (kpiTarifNote) kpiTarifNote.innerText = `par kWh, période ${lastRealRow.date}`;
+            } else if (refTarif() > 0) {
+                kpiTarif.innerText = refTarif().toFixed(2) + " €";
+                if (kpiTarifNote) kpiTarifNote.innerText = `par kWh, année de référence`;
+            } else {
+                kpiTarif.innerText = "0.00 €";
+                if (kpiTarifNote) kpiTarifNote.innerText = "par kWh";
+            }
         }
 
         const kpiEcoMensuelle = document.getElementById('kpi-eco-mensuelle');
@@ -767,31 +974,34 @@
         const kpiCo2Trees = document.getElementById('kpi-co2-trees');
         if (kpiCo2) {
             const totalKwhEconomises = processedRealRows.reduce((acc, r) => acc + r.kwhEconomises, 0);
-            const totalCo2Kg = totalKwhEconomises * CO2_KG_PAR_KWH;
+            const totalCo2Kg = totalKwhEconomises * (config.co2Factor / 1000);
             kpiCo2.innerText = Math.round(totalCo2Kg).toLocaleString('fr-FR') + " kg";
             if (kpiCo2Trees) {
                 const arbresEquivalent = Math.round(totalCo2Kg / CO2_KG_PAR_ARBRE_PAR_AN);
-                kpiCo2Trees.innerText = `Équivalent à environ ${arbresEquivalent} arbre${arbresEquivalent > 1 ? 's' : ''} planté${arbresEquivalent > 1 ? 's' : ''} (absorption sur 1 an)`;
+                kpiCo2Trees.innerText = `${config.co2Factor} g CO2/kWh économisé — équivalent à environ ${arbresEquivalent} arbre${arbresEquivalent > 1 ? 's' : ''} planté${arbresEquivalent > 1 ? 's' : ''} (absorption sur 1 an)`;
             }
         }
 
-        let fullDashboardData = processedRealRows.map(r => ({...r, isReal: true}));
-        let simulatedRenta = appInvest - totalGainsReels;
-        let lastDateYear = 25; 
-        if(appData.length > 0) {
-            let parts = appData[appData.length - 1].date.split('-');
-            if(parts.length > 1) lastDateYear = parseInt(parts[1]) || 25;
-        }
-        
-        let indexProjection = 1;
-        let referenceLastRow = appData[appData.length - 1] || { facture: 1869.64, kwh: 7375, revente: 1082.70 };
-        let projectedRevente = lastRealRow ? Math.max(0, derniereAnneeGains - lastRealRow.economies) : referenceLastRow.revente;
+        // Tableau de bord complet : référence + années réelles + projections.
+        const hasRef = config.refFacture > 0 || config.refKwh > 0;
+        let fullDashboardData = (hasRef ? [buildRefDisplayRow()] : []).concat(processedRealRows.map(r => ({ ...r, isReal: true })));
 
-        while(simulatedRenta > 0 && indexProjection <= 8) {
-            lastDateYear++; simulatedRenta -= derniereAnneeGains;
-            let simulatedRow = { date: `juin-${lastDateYear}`, detail: `+${indexProjection}a`, facture: referenceLastRow.facture, kwh: referenceLastRow.kwh, revente: projectedRevente };
-            fullDashboardData.push({ ...processRowCalculations(simulatedRow, false), isReal: false });
-            indexProjection++;
+        if (lastRealRow && derniereAnneeGains > 0) {
+            let simulatedRenta = config.invest - totalGainsReels;
+            const parts = String(lastRealRow.date).split('-');
+            let lastDateYear = parseInt(parts[parts.length - 1]);
+            if (isNaN(lastDateYear)) lastDateYear = (normYear(config.refYear) + appData.length) % 100;
+            const month = parts.length > 1 ? parts.slice(0, -1).join('-') : config.refMonth;
+            const projectedRevente = config.hasResale ? Math.max(0, derniereAnneeGains - lastRealRow.economies) : 0;
+
+            let indexProjection = 1;
+            while (simulatedRenta > 0 && indexProjection <= 8) {
+                lastDateYear = (lastDateYear + 1) % 100;
+                simulatedRenta -= derniereAnneeGains;
+                const simulatedRow = { date: `${month}-${String(lastDateYear).padStart(2, '0')}`, detail: `+${indexProjection}a`, facture: lastRealRow.facture, kwh: lastRealRow.kwh, revente: projectedRevente };
+                fullDashboardData.push({ ...processRowCalculations(simulatedRow), isReal: false });
+                indexProjection++;
+            }
         }
 
         const compareContainer = document.getElementById('summaryCompare');
@@ -801,12 +1011,16 @@
         compareContainer.innerHTML = '';
         if (compareExtraContainer) compareExtraContainer.innerHTML = '';
 
+        if (fullDashboardData.length === 0) {
+            compareContainer.innerHTML = `<p class="empty-note">Renseignez vos paramètres puis saisissez vos années pour voir le comparatif.</p>`;
+        }
+
         const maxGain = Math.max(...fullDashboardData.map(r => r.gainsAnnuels), 1);
         let cumulRunning = 0;
         let projectedSeen = 0;
         fullDashboardData.forEach(colData => {
             cumulRunning += colData.gainsAnnuels;
-            const resteCap = Math.max(0, appInvest - cumulRunning);
+            const resteCap = Math.max(0, config.invest - cumulRunning);
             const pct = Math.max(4, (colData.gainsAnnuels / maxGain) * 100);
             if (!colData.isReal) projectedSeen++;
 
@@ -853,10 +1067,10 @@
                 const ctxRoi = document.getElementById('roiChart');
                 if(ctxRoi) {
                     const ctxRoi2d = ctxRoi.getContext('2d');
-                    
+
                     const lineGradient = ctxRoi2d.createLinearGradient(0, 0, ctxRoi.offsetWidth || 500, 0);
-                    lineGradient.addColorStop(0, '#38bdf8'); 
-                    lineGradient.addColorStop(1, '#4ade80'); 
+                    lineGradient.addColorStop(0, '#38bdf8');
+                    lineGradient.addColorStop(1, '#4ade80');
 
                     const fillGradient = ctxRoi2d.createLinearGradient(0, 0, 0, 180);
                     fillGradient.addColorStop(0, 'rgba(56, 189, 248, 0.15)');
@@ -871,38 +1085,38 @@
                         data: {
                             labels: fullDashboardData.map(d => d.date),
                             datasets: [
-                                { 
+                                {
                                     label: 'Gains cumulés',
-                                    data: seriesGainsCumules, 
-                                    borderColor: lineGradient, 
+                                    data: seriesGainsCumules,
+                                    borderColor: lineGradient,
                                     borderWidth: 2.5,
-                                    pointRadius: 4, 
+                                    pointRadius: 4,
                                     pointBackgroundColor: lineGradient,
                                     pointBorderColor: '#0b0f19',
                                     pointBorderWidth: 1.5,
-                                    backgroundColor: fillGradient, 
-                                    fill: true, 
-                                    tension: 0 
+                                    backgroundColor: fillGradient,
+                                    fill: true,
+                                    tension: 0
                                 },
-                                { 
+                                {
                                     label: 'Seuil Investi',
-                                    data: Array(fullDashboardData.length).fill(appInvest), 
-                                    borderColor: '#475569', 
-                                    borderDash: [4, 4], 
+                                    data: Array(fullDashboardData.length).fill(config.invest),
+                                    borderColor: '#475569',
+                                    borderDash: [4, 4],
                                     borderWidth: 1,
-                                    pointRadius: 0, 
+                                    pointRadius: 0,
                                     fill: false,
                                     tension: 0
                                 }
                             ]
                         },
-                        options: { 
-                            responsive: true, 
+                        options: {
+                            responsive: true,
                             maintainAspectRatio: false,
                             plugins: { legend: { display: false } },
                             scales: {
                                 x: { grid: { display: false } },
-                                y: { 
+                                y: {
                                   grid: { color: 'rgba(255, 255, 255, 0.03)' },
                                   ticks: { padding: 8 }
                                 }
@@ -914,37 +1128,38 @@
                 const ctxBreakdown = document.getElementById('breakdownChart');
                 if(ctxBreakdown) {
                     const ctxBreakdown2d = ctxBreakdown.getContext('2d');
+                    const breakdownRows = (hasRef ? [buildRefDisplayRow()] : []).concat(processedRealRows);
 
                     breakdownChartInstance = new Chart(ctxBreakdown2d, {
                         type: 'bar',
                         data: {
-                            labels: processedRealRows.map(d => d.date),
+                            labels: breakdownRows.map(d => d.date),
                             datasets: [
-                                { 
+                                {
                                     label: 'Facture Elec.',
-                                    data: processedRealRows.map(d => d.facture), 
-                                    backgroundColor: 'rgba(56, 189, 248, 0.4)', 
-                                    borderColor: '#38bdf8', 
+                                    data: breakdownRows.map(d => d.facture),
+                                    backgroundColor: 'rgba(56, 189, 248, 0.4)',
+                                    borderColor: '#38bdf8',
                                     borderWidth: 1.5,
                                     borderRadius: 4
                                 },
-                                { 
+                                {
                                     label: 'Économies Réelles',
-                                    data: processedRealRows.map(d => d.economies), 
-                                    backgroundColor: 'rgba(74, 222, 128, 0.4)', 
-                                    borderColor: '#4ade80', 
+                                    data: breakdownRows.map(d => d.economies),
+                                    backgroundColor: 'rgba(74, 222, 128, 0.4)',
+                                    borderColor: '#4ade80',
                                     borderWidth: 1.5,
                                     borderRadius: 4
                                 }
                             ]
                         },
-                        options: { 
-                            responsive: true, 
+                        options: {
+                            responsive: true,
                             maintainAspectRatio: false,
-                            plugins: { legend: { display: false } }, 
+                            plugins: { legend: { display: false } },
                             scales: {
                                 x: { grid: { display: false } },
-                                y: { 
+                                y: {
                                   grid: { color: 'rgba(255, 255, 255, 0.03)' },
                                   ticks: { padding: 8 }
                                 }
@@ -994,10 +1209,8 @@
         const body = document.getElementById('modalGainsBody');
         if (!modal || !body) return;
 
-        const aidesParPeriode = {};
-        oneTimeAids.forEach(aid => { aidesParPeriode[aid.date] = (aidesParPeriode[aid.date] || 0) + aid.montant; });
-        
-        let processedRealRows = appData.map(row => processRowCalculations(row, row.date === "juin-23", aidesParPeriode[row.date] || 0));
+        const processedRealRows = buildProcessedRows();
+        const showResale = config.hasResale;
 
         let totalEco = 0;
         let totalRevente = 0;
@@ -1017,11 +1230,17 @@
                         <span style="font-size:10px; color:var(--text-muted);">${r.detail}</span>
                     </td>
                     <td style="text-align: right; color: var(--neon-blue); font-weight: 500;">${Math.round(r.economies).toLocaleString('fr-FR')} €</td>
-                    <td style="text-align: right; color: var(--neon-orange); font-weight: 500;">${Math.round(r.revente).toLocaleString('fr-FR')} €</td>
+                    ${showResale ? `<td style="text-align: right; color: var(--neon-orange); font-weight: 500;">${Math.round(r.revente).toLocaleString('fr-FR')} €</td>` : ''}
                     <td style="text-align: right; font-weight: 600; color: var(--neon-green);">${Math.round(r.gainsAnnuels).toLocaleString('fr-FR')} €</td>
                 </tr>
             `;
         }).join('');
+
+        if (processedRealRows.length === 0) {
+            body.innerHTML = `<p class="empty-note">Aucune année saisie pour l'instant. Ajoutez vos périodes dans l'onglet ✍️ Saisie.</p>`;
+            modal.classList.add('active');
+            return;
+        }
 
         body.innerHTML = `
             <table class="modal-table">
@@ -1029,7 +1248,7 @@
                     <tr>
                         <th>Période</th>
                         <th style="text-align: right;">Économies</th>
-                        <th style="text-align: right;">Revente</th>
+                        ${showResale ? '<th style="text-align: right;">Revente</th>' : ''}
                         <th style="text-align: right;">Total</th>
                     </tr>
                 </thead>
@@ -1038,7 +1257,7 @@
                     <tr class="modal-total-row" style="border-top: 2px solid rgba(255,255,255,0.15); background-color: rgba(255,255,255,0.02)">
                         <td style="padding: 14px 6px;"><b>Cumulé</b></td>
                         <td style="text-align: right; color: var(--neon-blue); font-weight: 700;">${Math.round(totalEco).toLocaleString('fr-FR')} €</td>
-                        <td style="text-align: right; color: var(--neon-orange); font-weight: 700;">${Math.round(totalRevente).toLocaleString('fr-FR')} €</td>
+                        ${showResale ? `<td style="text-align: right; color: var(--neon-orange); font-weight: 700;">${Math.round(totalRevente).toLocaleString('fr-FR')} €</td>` : ''}
                         <td style="text-align: right; color: var(--neon-green); font-weight: 700; font-size: 15px;">${Math.round(totalGains).toLocaleString('fr-FR')} €</td>
                     </tr>
                 </tbody>
