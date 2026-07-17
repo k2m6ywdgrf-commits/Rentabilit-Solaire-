@@ -42,8 +42,10 @@
     --neon-amber: #fbbf24;
   }
 
+  /* Thème clair : appliqué par le système (mode Auto) ou forcé via data-theme.
+     Le mode choisi dans les Paramètres (data-theme) a toujours priorité. */
   @media (prefers-color-scheme: light) {
-    :root {
+    :root:not([data-theme="dark"]) {
       color-scheme: light;
       --bg-base: #eef2f7;
       --bg-glow: #c7d2fe;
@@ -70,6 +72,33 @@
       --neon-teal: #0d9488;
       --neon-amber: #b45309;
     }
+  }
+  :root[data-theme="light"] {
+    color-scheme: light;
+    --bg-base: #eef2f7;
+    --bg-glow: #c7d2fe;
+    --glass-bg: rgba(255, 255, 255, 0.78);
+    --input-bg: rgba(241, 245, 249, 0.95);
+    --input-bg-focus: #ffffff;
+    --text-main: #0f172a;
+    --text-muted: #64748b;
+    --border-glass: rgba(15, 23, 42, 0.09);
+    --border-soft: rgba(15, 23, 42, 0.07);
+    --surface-1: rgba(15, 23, 42, 0.04);
+    --surface-2: rgba(15, 23, 42, 0.06);
+    --surface-3: rgba(15, 23, 42, 0.08);
+    --surface-active: rgba(255, 255, 255, 0.95);
+    --tint-end: rgba(255, 255, 255, 0.6);
+    --row-bg: rgba(15, 23, 42, 0.03);
+    --row-border: rgba(15, 23, 42, 0.09);
+    --overlay: rgba(15, 23, 42, 0.45);
+    --neon-blue: #0284c7;
+    --neon-green: #16a34a;
+    --neon-red: #e11d48;
+    --neon-orange: #d97706;
+    --neon-purple: #7c3aed;
+    --neon-teal: #0d9488;
+    --neon-amber: #b45309;
   }
 
   /* --- Comportement Application Native --- */
@@ -121,8 +150,9 @@
   }
 
   @media (prefers-color-scheme: light) {
-    .card { box-shadow: 0 8px 32px 0 rgba(15, 23, 42, 0.08); }
+    :root:not([data-theme="dark"]) .card { box-shadow: 0 8px 32px 0 rgba(15, 23, 42, 0.08); }
   }
+  :root[data-theme="light"] .card { box-shadow: 0 8px 32px 0 rgba(15, 23, 42, 0.08); }
 
   .card h2 { margin: 0 0 12px; font-size: 11px; color: var(--text-muted); font-weight: 700; text-transform: uppercase; letter-spacing: 1px; }
 
@@ -536,6 +566,14 @@
                     <label for="config-resale">☀️ Revente du surplus (injection réseau)</label>
                     <input type="checkbox" id="config-resale" checked>
                 </div>
+                <div class="row">
+                    <label>🌓 Affichage</label>
+                    <select id="config-theme">
+                        <option value="auto">Automatique (réglage du système)</option>
+                        <option value="light">Clair</option>
+                        <option value="dark">Sombre</option>
+                    </select>
+                </div>
                 <hr class="divider">
                 <h2>📅 Année de Référence (avant solaire)</h2>
                 <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 12px;">
@@ -685,7 +723,8 @@
         hasResale: true,       // revente du surplus activée ou non
         co2Factor: 56,         // g de CO2 évité par kWh économisé
         billingMode: 'annuel', // 'annuel' ou 'mensuel'
-        inflationPct: 0        // hausse annuelle estimée du prix de l'électricité (%)
+        inflationPct: 0,       // hausse annuelle estimée du prix de l'électricité (%)
+        theme: 'auto'          // 'auto' (système), 'light' ou 'dark'
     };
 
     let config = { ...DEFAULT_CONFIG };
@@ -700,9 +739,19 @@
     let gainCompareChartInstance = null;
     let projectedYearsExpanded = false;
 
-    /* --- THÈME CLAIR / SOMBRE (suit le réglage du système) --- */
+    /* --- THÈME CLAIR / SOMBRE (réglage : auto/clair/sombre dans les Paramètres) --- */
     const lightMq = window.matchMedia('(prefers-color-scheme: light)');
-    function isLight() { return lightMq.matches; }
+    function isLight() {
+        if (config.theme === 'light') return true;
+        if (config.theme === 'dark') return false;
+        return lightMq.matches;
+    }
+    function applyTheme() {
+        const root = document.documentElement;
+        if (config.theme === 'light' || config.theme === 'dark') root.setAttribute('data-theme', config.theme);
+        else root.removeAttribute('data-theme');
+        updateThemeColorMeta();
+    }
     function chartColors() {
         return isLight()
             ? { tick: '#475569', grid: 'rgba(15, 23, 42, 0.07)', seuil: '#94a3b8', pointBorder: '#ffffff' }
@@ -901,6 +950,7 @@
     }
 
     function launchApplication() {
+        applyTheme();
         initConfigInputs();
         applyResaleVisibility();
         applyBillingModeVisibility();
@@ -1027,6 +1077,7 @@
         const setVal = (id, v) => { const el = document.getElementById(id); if (el) el.value = v; };
         setVal('config-invest', config.invest || '');
         setVal('config-billing', config.billingMode);
+        setVal('config-theme', ['light', 'dark'].includes(config.theme) ? config.theme : 'auto');
         setVal('config-ref-month', config.refMonth);
         setVal('config-ref-year', config.refYear || '');
         setVal('config-ref-facture', config.refFacture || '');
@@ -1040,6 +1091,8 @@
     function saveConfig() {
         config.invest = parseFloat(document.getElementById('config-invest').value) || 0;
         config.billingMode = document.getElementById('config-billing').value === 'mensuel' ? 'mensuel' : 'annuel';
+        const themeVal = document.getElementById('config-theme').value;
+        config.theme = ['light', 'dark'].includes(themeVal) ? themeVal : 'auto';
         config.refMonth = document.getElementById('config-ref-month').value || DEFAULT_CONFIG.refMonth;
         config.refYear = normYear(document.getElementById('config-ref-year').value);
         config.refFacture = parseFloat(document.getElementById('config-ref-facture').value) || 0;
@@ -1053,6 +1106,7 @@
         editingDate = null;
         editingYm = null;
         document.getElementById('dataForm').reset();
+        applyTheme();
         applyResaleVisibility();
         applyBillingModeVisibility();
         initSaisieTab();
