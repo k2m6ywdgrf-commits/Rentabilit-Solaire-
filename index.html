@@ -1083,8 +1083,21 @@
         return { date: `${month}-${String((y + 1) % 100).padStart(2, '0')}`, detail: `Année ${n + 1}` };
     }
 
+    /* Le champ « mois couverts » ne concerne que la première année
+       (installation démarrée en cours d'année). Masqué pour les suivantes. */
+    function updateMonthsFieldVisibility() {
+        const monthsRow = document.getElementById('months-row');
+        if (!monthsRow) return;
+        if (config.billingMode === 'mensuel') { monthsRow.style.display = 'none'; return; }
+        const rows = getAnnualRows();
+        const firstDate = rows.length ? rows[0].date : null;
+        const isFirstYear = editingDate ? (editingDate === firstDate) : (rows.length === 0);
+        monthsRow.style.display = isFirstYear ? '' : 'none';
+    }
+
     function updateAutoFields() {
         const monthly = config.billingMode === 'mensuel';
+        updateMonthsFieldVisibility();
         const formTitle = document.getElementById('saisie-form-title');
         const dateLabel = document.getElementById('auto-date-label');
         const submitBtn = document.getElementById('saisie-submit-btn');
@@ -1269,8 +1282,7 @@
         if (kwhInput) kwhInput.placeholder = monthly ? 'ex: 600' : 'ex: 7200';
         const reventeInput = document.getElementById('form-revente');
         if (reventeInput) reventeInput.placeholder = monthly ? 'ex: 90.00' : 'ex: 1100.00';
-        const monthsRow = document.getElementById('months-row');
-        if (monthsRow) monthsRow.style.display = monthly ? 'none' : '';
+        updateMonthsFieldVisibility();
         const monthlyCard = document.getElementById('monthly-history-card');
         if (monthlyCard) monthlyCard.style.display = (monthly || monthlyData.length > 0) ? '' : 'none';
     }
