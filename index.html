@@ -266,6 +266,21 @@
     transition: background 0.2s, box-shadow 0.2s, filter 0.2s;
     filter: grayscale(0.7) opacity(0.75);
   }
+  /* --- BARRE FLOTTANTE « APPLIQUER » (visible dès qu'un réglage change) --- */
+  #apply-bar {
+    position: fixed; left: 0; right: 0; z-index: 1400;
+    max-width: 600px; margin: 0 auto;
+    bottom: calc(76px + env(safe-area-inset-bottom));
+    padding: 0 16px;
+    transform: translateY(20px); opacity: 0; pointer-events: none;
+    transition: transform 0.25s ease, opacity 0.25s ease;
+  }
+  #apply-bar.visible { transform: translateY(0); opacity: 1; pointer-events: auto; }
+  body.apply-visible { padding-bottom: calc(170px + env(safe-area-inset-bottom)); }
+  #apply-bar button {
+    box-shadow: 0 8px 24px rgba(2, 132, 199, 0.45);
+  }
+
   .nav-btn.active { color: var(--text-main); font-weight: 700; }
   .nav-btn.active .nav-icon {
     background: rgba(74, 222, 128, 0.14);
@@ -579,9 +594,27 @@
                     <label>Coût d'investissement initial (€)</label>
                     <input type="number" step="0.01" min="0" id="config-invest" placeholder="ex: 12000">
                 </div>
-                <div class="switch-row" style="margin-bottom: 0; padding-bottom: 0;">
+                <div class="switch-row">
                     <label for="config-resale">Revente du surplus (injection réseau)</label>
                     <input type="checkbox" id="config-resale" checked>
+                </div>
+                <div class="switch-row" style="margin-bottom: 0; padding-bottom: 0;">
+                    <label for="config-aids-toggle">🎁 J'ai reçu des aides ponctuelles</label>
+                    <input type="checkbox" id="config-aids-toggle" onchange="toggleAidsPanel()">
+                </div>
+                <div id="aids-panel" style="display: none;">
+                    <hr class="divider">
+                    <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 12px;">
+                        Primes ou aides one-shot (ex : aide à l'autoconsommation) déjà comprises dans une revente saisie. Comptées dans vos gains réels, mais exclues du calcul des années projetées pour ne pas fausser les estimations.
+                    </p>
+                    <div class="sim-row" style="flex-wrap: wrap; gap: 6px; border-bottom: none; padding-bottom: 0;">
+                        <span>Aide de</span>
+                        <input type="number" step="0.01" id="aid-amount" placeholder="1000" style="width: 90px; padding: 8px; background-color: var(--input-bg); border: 1px solid var(--border-soft); border-radius: 8px; color: var(--text-main); font-size: 13px;">
+                        <span>€ reçue pour la période de</span>
+                        <select id="aid-period" style="padding: 8px; background-color: var(--input-bg); border: 1px solid var(--border-soft); border-radius: 8px; color: var(--text-main); font-size: 13px;"></select>
+                    </div>
+                    <button class="btn-blue" onclick="addOneTimeAid()" style="margin-top: 10px;">Ajouter l'aide</button>
+                    <div id="aidsList" style="margin-top: 10px;"></div>
                 </div>
             </div>
 
@@ -658,15 +691,6 @@
                 </div>
             </div>
 
-            <div class="card">
-                <button class="btn-blue" onclick="saveConfig()">✅ Appliquer les modifications</button>
-                <p style="font-size: 11px; color: var(--text-muted); text-align: center; margin-top: 8px;">
-                    Enregistre l'ensemble des réglages ci-dessus.
-                </p>
-                <hr class="divider">
-                <button class="btn-gray" onclick="resetToDefault()">Tout réinitialiser (efface les données)</button>
-            </div>
-
             <div class="card config-card">
                 <h2>💾 Sauvegarde</h2>
                 <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 12px;">
@@ -685,22 +709,19 @@
                 </button>
             </div>
 
-            <div class="card card-tint-amber config-aids-card">
-                <h2>🎁 Aides Ponctuelles</h2>
+            <div class="card card-tint-red">
+                <h2>⚠️ Zone de Danger</h2>
                 <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 12px;">
-                    Primes ou aides one-shot (ex : aide à l'autoconsommation) déjà comprises dans une revente saisie. Comptées dans vos gains réels, mais exclues du calcul des années projetées pour ne pas fausser les estimations.
+                    Efface définitivement toutes vos données et paramètres. Pensez à exporter une sauvegarde avant.
                 </p>
-                <div class="sim-row" style="flex-wrap: wrap; gap: 6px; border-bottom: none; padding-bottom: 0;">
-                    <span>Aide de</span>
-                    <input type="number" step="0.01" id="aid-amount" placeholder="1000" style="width: 90px; padding: 8px; background-color: var(--input-bg); border: 1px solid var(--border-soft); border-radius: 8px; color: var(--text-main); font-size: 13px;">
-                    <span>€ reçue pour la période de</span>
-                    <select id="aid-period" style="padding: 8px; background-color: var(--input-bg); border: 1px solid var(--border-soft); border-radius: 8px; color: var(--text-main); font-size: 13px;"></select>
-                </div>
-                <button class="btn-blue" onclick="addOneTimeAid()" style="margin-top: 10px;">Ajouter l'aide</button>
-                <div id="aidsList" style="margin-top: 10px;"></div>
+                <button class="btn-gray" onclick="resetToDefault()" style="color: var(--neon-red);">Tout réinitialiser (efface les données)</button>
             </div>
         </div>
     </div>
+</div>
+
+<div id="apply-bar">
+    <button class="btn-blue" onclick="saveConfig()">✅ Appliquer les modifications</button>
 </div>
 
 <nav class="bottom-nav">
@@ -1028,6 +1049,8 @@
         updateAutoFields();
         populateAidPeriodSelect();
         renderAidsList();
+        watchConfigChanges();
+        setConfigDirty(false);
     }
 
     function openTab(event, tabId) {
@@ -1041,6 +1064,7 @@
         if (btn) btn.classList.add('active');
 
         window.scrollTo({ top: 0 });
+        updateApplyBar();
         if(tabId === 'graphiques') calculateAndRender();
         if(tabId === 'saisie') updateAutoFields();
     }
@@ -1154,6 +1178,47 @@
         setVal('config-co2', config.co2Factor);
         const resale = document.getElementById('config-resale');
         if (resale) resale.checked = !!config.hasResale;
+        // Le panneau des aides s'ouvre d'office si des aides existent déjà.
+        const aidsToggle = document.getElementById('config-aids-toggle');
+        if (aidsToggle) aidsToggle.checked = oneTimeAids.length > 0;
+        toggleAidsPanel();
+    }
+
+    function toggleAidsPanel() {
+        const toggle = document.getElementById('config-aids-toggle');
+        const panel = document.getElementById('aids-panel');
+        if (panel && toggle) panel.style.display = toggle.checked ? '' : 'none';
+    }
+
+    /* --- BOUTON « APPLIQUER » FLOTTANT : visible dès qu'un réglage change --- */
+    let configDirty = false;
+
+    function setConfigDirty(v) {
+        configDirty = v;
+        updateApplyBar();
+    }
+
+    function updateApplyBar() {
+        const bar = document.getElementById('apply-bar');
+        if (!bar) return;
+        const onConfigTab = document.getElementById('config').classList.contains('active');
+        const show = configDirty && onConfigTab;
+        bar.classList.toggle('visible', show);
+        document.body.classList.toggle('apply-visible', show);
+    }
+
+    let configWatchersAttached = false;
+    function watchConfigChanges() {
+        if (configWatchersAttached) return;
+        configWatchersAttached = true;
+        ['config-invest', 'config-resale', 'config-billing', 'config-ref-month',
+         'config-ref-year', 'config-ref-facture', 'config-ref-kwh',
+         'config-inflation', 'config-co2', 'config-theme'].forEach(id => {
+            const el = document.getElementById(id);
+            if (!el) return;
+            const evt = (el.type === 'checkbox' || el.tagName === 'SELECT') ? 'change' : 'input';
+            el.addEventListener(evt, () => setConfigDirty(true));
+        });
     }
 
     function saveConfig() {
@@ -1181,6 +1246,7 @@
         updateAutoFields();
         populateAidPeriodSelect();
         calculateAndRender();
+        setConfigDirty(false);
         alert("Configuration mise à jour !");
     }
 
