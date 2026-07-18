@@ -573,32 +573,19 @@
         </div>
 
         <div id="config" class="tab-content">
-            <div class="card config-params-card">
-                <h2>⚙️ Mon Installation</h2>
+            <div class="card card-tint-purple">
+                <h2>☀️ Mon Installation</h2>
                 <div class="row">
                     <label>Coût d'investissement initial (€)</label>
                     <input type="number" step="0.01" min="0" id="config-invest" placeholder="ex: 12000">
                 </div>
-                <div class="row">
-                    <label>Mode de saisie des factures</label>
-                    <select id="config-billing">
-                        <option value="annuel">Annuelle — une saisie par an</option>
-                        <option value="mensuel">Mensuelle — une saisie par mois, agrégée par année</option>
-                    </select>
-                </div>
-                <div class="switch-row">
-                    <label for="config-resale">☀️ Revente du surplus (injection réseau)</label>
+                <div class="switch-row" style="margin-bottom: 0; padding-bottom: 0;">
+                    <label for="config-resale">Revente du surplus (injection réseau)</label>
                     <input type="checkbox" id="config-resale" checked>
                 </div>
-                <div class="row">
-                    <label>🌓 Affichage</label>
-                    <select id="config-theme">
-                        <option value="auto">Automatique (réglage du système)</option>
-                        <option value="light">Clair</option>
-                        <option value="dark">Sombre</option>
-                    </select>
-                </div>
-                <hr class="divider">
+            </div>
+
+            <div class="card card-tint-blue">
                 <h2>📅 Année de Référence (avant solaire)</h2>
                 <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 12px;">
                     La dernière année complète <b>avant</b> l'installation : elle sert de base de comparaison pour calculer vos économies.
@@ -630,21 +617,52 @@
                     <label>Facture totale de l'année de référence TTC (€)</label>
                     <input type="number" step="0.01" min="0" id="config-ref-facture" placeholder="ex: 1890.00">
                 </div>
-                <div class="row">
+                <div class="row" style="margin-bottom: 0;">
                     <label>Consommation de l'année de référence (kWh)</label>
                     <input type="number" min="0" id="config-ref-kwh" placeholder="ex: 9500">
                 </div>
-                <hr class="divider">
-                <h2>📈 Projections</h2>
+            </div>
+
+            <div class="card card-tint-green">
+                <h2>✍️ Saisie des Factures</h2>
+                <div class="row" style="margin-bottom: 0;">
+                    <label>Fréquence de saisie</label>
+                    <select id="config-billing">
+                        <option value="annuel">Annuelle — une saisie par an</option>
+                        <option value="mensuel">Mensuelle — une saisie par mois, agrégée par année</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="card card-tint-amber">
+                <h2>📈 Projections & Estimations</h2>
                 <div class="row">
                     <label>Hausse annuelle estimée du prix de l'électricité (%) — appliquée aux années projetées</label>
                     <input type="number" step="0.1" id="config-inflation" placeholder="ex: 3">
                 </div>
-                <div class="row">
+                <div class="row" style="margin-bottom: 0;">
                     <label>Facteur d'émission CO2 évité (g/kWh) — 56 pour le mix français, ~400 pour le mix européen</label>
                     <input type="number" step="1" min="0" id="config-co2" placeholder="ex: 56">
                 </div>
-                <button class="btn-blue" onclick="saveConfig()" style="margin-top: 8px;">Appliquer les modifications</button>
+            </div>
+
+            <div class="card card-tint-teal">
+                <h2>🌓 Affichage</h2>
+                <div class="row" style="margin-bottom: 0;">
+                    <label>Thème de l'application</label>
+                    <select id="config-theme">
+                        <option value="auto">Automatique (réglage du système)</option>
+                        <option value="light">Clair</option>
+                        <option value="dark">Sombre</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="card">
+                <button class="btn-blue" onclick="saveConfig()">✅ Appliquer les modifications</button>
+                <p style="font-size: 11px; color: var(--text-muted); text-align: center; margin-top: 8px;">
+                    Enregistre l'ensemble des réglages ci-dessus.
+                </p>
                 <hr class="divider">
                 <button class="btn-gray" onclick="resetToDefault()">Tout réinitialiser (efface les données)</button>
             </div>
