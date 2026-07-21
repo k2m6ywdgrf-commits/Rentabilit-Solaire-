@@ -1,6 +1,6 @@
 /* Service worker : rend l'application utilisable hors ligne.
    Incrémenter CACHE_VERSION à chaque mise à jour des fichiers de l'app. */
-const CACHE_VERSION = 'solaire-v10';
+const CACHE_VERSION = 'solaire-v11';
 const APP_SHELL = [
   './',
   './index.html',
@@ -28,6 +28,10 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
   const req = event.request;
   if (req.method !== 'GET') return;
+
+  // Ne pas intercepter les requêtes cross-origin (Firebase, Google, gstatic…) :
+  // elles doivent atteindre le réseau directement, sans passer par le cache.
+  if (new URL(req.url).origin !== self.location.origin) return;
 
   // Pages : réseau d'abord (pour récupérer les mises à jour), cache en secours.
   if (req.mode === 'navigate') {

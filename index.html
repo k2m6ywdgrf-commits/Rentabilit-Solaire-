@@ -390,6 +390,11 @@
   }
   .share-footer b { color: #38bdf8; }
   .share-brand { margin-top: 12px; font-size: 10px; letter-spacing: 2px; text-transform: uppercase; color: rgba(255, 255, 255, 0.45); position: relative; }
+
+  /* --- Sauvegarde cloud (Firebase) : indicateur d'état --- */
+  .cloud-status { display: flex; align-items: center; font-size: 13px; color: var(--text-muted); margin-bottom: 12px; line-height: 1.4; }
+  .cloud-dot { width: 9px; height: 9px; border-radius: 50%; display: inline-block; margin-right: 8px; flex-shrink: 0; box-shadow: 0 0 6px currentColor; }
+  .cloud-email { color: var(--text-muted); }
 </style>
 </head>
 <body>
@@ -689,6 +694,18 @@
                         <option value="dark">Sombre</option>
                     </select>
                 </div>
+            </div>
+
+            <div class="card config-card" id="cloud-card">
+                <h2>☁️ Sauvegarde cloud</h2>
+                <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 12px;">
+                    Connectez-vous avec Google pour sauvegarder vos données dans le cloud et les
+                    synchroniser automatiquement entre tous vos appareils. L'application reste
+                    utilisable hors ligne : le cloud vient en plus, il ne remplace rien.
+                </p>
+                <div id="cloud-status" class="cloud-status"><span class="cloud-dot" style="color: var(--text-muted); background: currentColor;"></span>Non connecté</div>
+                <button class="btn-blue" id="cloud-signin" onclick="cloudSignIn()">Se connecter avec Google</button>
+                <button class="btn-gray" id="cloud-signout" onclick="cloudSignOut()" style="display: none;">Se déconnecter</button>
             </div>
 
             <div class="card config-card">
@@ -1292,10 +1309,119 @@
         safeSetItem(DATA_KEY, JSON.stringify(appData));
         safeSetItem(MONTHLY_KEY, JSON.stringify(monthlyData));
         safeSetItem(AIDS_KEY, JSON.stringify(oneTimeAids));
+        // Point de passage unique : on pousse aussi vers le cloud si connecté.
+        // no-op si déconnecté ou Firebase non configuré ; ignoré pendant l'application
+        // d'une donnée venue du cloud (pour ne pas renvoyer un écho).
+        if (!__applyingCloud && window.Cloud && window.Cloud.push) {
+            window.Cloud.push(collectCloudPayload());
+        }
+    }
+
+    /* =====================================================================
+       PONT app ↔ module Firebase (sauvegarde cloud).
+       Tout l'état de l'app tient dans un seul objet, sérialisé en une seule
+       chaîne JSON côté Firestore (champ payloadJSON). Voir le playbook.
+       ===================================================================== */
+    const CLOUD_SCHEMA = 1;
+    let __applyingCloud = false;   // true pendant qu'on applique une donnée cloud (anti-écho)
+
+    function collectCloudPayload() {
+        return { schema: CLOUD_SCHEMA, config, appData, monthlyData, oneTimeAids };
+    }
+
+    // Lu par le module Firebase pour la migration montante (cloud vide → on pousse le local).
+    window.__getLocalData = () => collectCloudPayload();
+
+    // Appelé par le module quand une donnée cloud doit devenir l'état de l'app.
+    window.__applyCloudData = (d) => {
+        if (!d || typeof d !== 'object') return;
+        __applyingCloud = true;
+        try {
+            if (d.config && typeof d.config === 'object') config = { ...DEFAULT_CONFIG, ...d.config };
+            if (Array.isArray(d.appData)) appData = d.appData;
+            if (Array.isArray(d.monthlyData)) monthlyData = d.monthlyData;
+            if (Array.isArray(d.oneTimeAids)) oneTimeAids = d.oneTimeAids;
+            saveAllToLocalStorage();   // écrit le local, sans repousser vers le cloud
+        } finally {
+            __applyingCloud = false;
+        }
+        launchApplication();
+    };
+
+    // Fusion NON destructive local + cloud à la première connexion (aucune perte).
+    window.__mergeData = (cloud) => {
+        const local = collectCloudPayload();
+        if (!cloud || typeof cloud !== 'object') return local;
+        const isCfg = (c) => c && c.invest > 0 && c.refFacture > 0 && c.refKwh > 0;
+        let mergedConfig;
+        if (isCfg(cloud.config)) mergedConfig = { ...DEFAULT_CONFIG, ...cloud.config };
+        else if (isCfg(local.config)) mergedConfig = { ...DEFAULT_CONFIG, ...local.config };
+        else mergedConfig = { ...DEFAULT_CONFIG, ...(cloud.config || {}), ...(local.config || {}) };
+        return {
+            schema: CLOUD_SCHEMA,
+            config: mergedConfig,
+            appData: unionBy(local.appData, cloud.appData, r => r.date),
+            monthlyData: unionBy(local.monthlyData, cloud.monthlyData, r => r.ym),
+            oneTimeAids: unionByJSON(local.oneTimeAids, cloud.oneTimeAids)
+        };
+    };
+
+    // Union par clé : on garde toutes les entrées ; sur conflit de clé, le cloud gagne
+    // (source partagée entre appareils). Les entrées présentes d'un seul côté survivent.
+    function unionBy(local, cloud, keyFn) {
+        local = Array.isArray(local) ? local : [];
+        cloud = Array.isArray(cloud) ? cloud : [];
+        const map = new Map();
+        local.forEach(x => map.set(keyFn(x), x));
+        cloud.forEach(x => map.set(keyFn(x), x));
+        return Array.from(map.values());
+    }
+    function unionByJSON(local, cloud) {
+        local = Array.isArray(local) ? local : [];
+        cloud = Array.isArray(cloud) ? cloud : [];
+        const seen = new Set(), out = [];
+        local.concat(cloud).forEach(x => {
+            const k = JSON.stringify(x);
+            if (!seen.has(k)) { seen.add(k); out.push(x); }
+        });
+        return out;
+    }
+
+    // Reçoit les changements d'état d'authentification / de synchro depuis le module.
+    window.__onAuthChange = (user, status) => updateSyncUI(user, status);
+
+    function cloudSignIn() { if (window.Cloud) window.Cloud.signIn(); }
+    function cloudSignOut() { if (window.Cloud) window.Cloud.signOut(); }
+
+    function updateSyncUI(user, status) {
+        const statusEl = document.getElementById('cloud-status');
+        const signInBtn = document.getElementById('cloud-signin');
+        const signOutBtn = document.getElementById('cloud-signout');
+        if (!statusEl) return;
+        const signedIn = !!user;
+        if (signInBtn) signInBtn.style.display = signedIn ? 'none' : '';
+        if (signOutBtn) signOutBtn.style.display = signedIn ? '' : 'none';
+        const who = user && (user.email || user.displayName) ? (user.email || user.displayName) : '';
+        const line = (color, label) =>
+            `<span class="cloud-dot" style="color:${color}; background:currentColor;"></span>${label}` +
+            (who ? ` <span class="cloud-email">· ${who}</span>` : '');
+        let html;
+        switch (status) {
+            case 'disabled':   html = line('var(--text-muted)', 'Sauvegarde cloud non configurée'); break;
+            case 'signedout':  html = line('var(--text-muted)', 'Non connecté — données locales uniquement'); break;
+            case 'connecting': html = line('var(--neon-orange)', 'Connexion…'); break;
+            case 'saving':     html = line('var(--neon-orange)', 'Enregistrement…'); break;
+            case 'synced':     html = line('var(--neon-green)', 'Synchronisé'); break;
+            case 'error':      html = line('var(--neon-red)', 'Erreur de synchronisation'); break;
+            default:           html = line('var(--text-muted)', 'Non connecté');
+        }
+        statusEl.innerHTML = html;
     }
 
     function resetToDefault() {
         if(confirm("Réinitialiser l'application ? Toutes vos données et paramètres seront effacés.")) {
+            // Efface aussi le document cloud, sinon il reviendrait au prochain chargement.
+            if (window.Cloud && window.Cloud.deleteRemote) window.Cloud.deleteRemote();
             safeClear();
             config = { ...DEFAULT_CONFIG };
             appData = [];
@@ -2040,6 +2166,151 @@
     }
 
     loadLocalData();
+</script>
+
+<!-- ======================================================================
+     SAUVEGARDE CLOUD FIREBASE (connexion Google + Firestore).
+     Module ESM séparé, greffé par-dessus l'app locale. L'app démarre toujours
+     depuis le localStorage ; le cloud vient répliquer les données quand
+     l'utilisateur est connecté. Voir le playbook « Intégration Firebase ».
+     ====================================================================== -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-app.js";
+  import { getAuth, GoogleAuthProvider, signInWithPopup, signInWithRedirect,
+           getRedirectResult, onAuthStateChanged, signOut }
+    from "https://www.gstatic.com/firebasejs/12.0.0/firebase-auth.js";
+  import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager,
+           doc, onSnapshot, setDoc, deleteDoc, serverTimestamp }
+    from "https://www.gstatic.com/firebasejs/12.0.0/firebase-firestore.js";
+
+  /* ⚠️  À REMPLIR — coller ici l'objet firebaseConfig de VOTRE projet Firebase
+     (Console Firebase → Paramètres du projet → Vos applications → SDK).
+     Créez un projet DISTINCT de « Mon Suivi de Rémunération ».
+     La apiKey n'est PAS un secret : c'est un identifiant public. La sécurité
+     repose entièrement sur les règles Firestore + l'authentification. */
+  const firebaseConfig = {
+    apiKey: "",
+    authDomain: "",
+    projectId: "",
+    storageBucket: "",
+    messagingSenderId: "",
+    appId: ""
+  };
+
+  // Pont vers le script principal (classique). Les fonctions window.__* sont
+  // lues paresseusement : l'ordre de chargement des scripts n'a pas d'importance.
+  const bridge = {
+    getLocal: () => (window.__getLocalData ? window.__getLocalData() : null),
+    apply:    (d) => { if (window.__applyCloudData) window.__applyCloudData(d); },
+    merge:    (c) => (window.__mergeData ? window.__mergeData(c) : c),
+    onAuth:   (u, s) => { if (window.__onAuthChange) window.__onAuthChange(u, s); }
+  };
+
+  const CONFIGURED = !!(firebaseConfig.apiKey && firebaseConfig.projectId);
+
+  if (!CONFIGURED) {
+    // Firebase pas encore configuré : l'app reste 100 % locale et fonctionnelle.
+    window.Cloud = {
+      configured: false,
+      isSignedIn: () => false,
+      signIn() { alert("Sauvegarde cloud pas encore configurée.\n\nCollez votre objet firebaseConfig dans index.html (voir le commentaire « À REMPLIR »), puis suivez les étapes de la console Firebase."); },
+      signOut() {},
+      push() {},
+      deleteRemote() { return Promise.resolve(); }
+    };
+    bridge.onAuth(null, 'disabled');
+  } else {
+    const app  = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const provider = new GoogleAuthProvider();
+    // Cache persistant = données conservées hors ligne, multi-onglets.
+    const db = initializeFirestore(app, {
+      localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() })
+    });
+
+    let currentUser = null;
+    let unsub = null;
+    let first = true;
+    let pushTimer = null;
+    let lastPayload = null;
+
+    const userDoc = (uid) => doc(db, 'users', uid);
+
+    function pushNow(payload) {
+      if (!currentUser || !payload) return;
+      bridge.onAuth(currentUser, 'saving');
+      setDoc(userDoc(currentUser.uid), {
+        payloadJSON: JSON.stringify(payload),
+        updatedAt: serverTimestamp()
+      })
+        .then(() => bridge.onAuth(currentUser, 'synced'))
+        .catch(() => bridge.onAuth(currentUser, 'error'));
+    }
+
+    window.Cloud = {
+      configured: true,
+      isSignedIn: () => !!currentUser,
+      signIn() {
+        signInWithPopup(auth, provider).catch((e) => {
+          const code = e && e.code;
+          // Repli mobile si le popup est bloqué / non supporté.
+          if (code === 'auth/popup-blocked' ||
+              code === 'auth/cancelled-popup-request' ||
+              code === 'auth/operation-not-supported-in-this-environment') {
+            signInWithRedirect(auth, provider).catch(() => bridge.onAuth(null, 'error'));
+          } else if (code && code !== 'auth/popup-closed-by-user') {
+            bridge.onAuth(currentUser, 'error');
+          }
+        });
+      },
+      signOut() { signOut(auth).catch(() => {}); },
+      // setDoc débouncé : on regroupe les écritures rapprochées.
+      push(payload) {
+        if (!currentUser) return;                 // no-op si déconnecté
+        lastPayload = payload;
+        clearTimeout(pushTimer);
+        pushTimer = setTimeout(() => pushNow(lastPayload), 800);
+      },
+      deleteRemote() {
+        if (!currentUser) return Promise.resolve();
+        return deleteDoc(userDoc(currentUser.uid)).catch(() => {});
+      }
+    };
+
+    // Récupère le résultat d'un éventuel signInWithRedirect (retour mobile).
+    getRedirectResult(auth).catch(() => {});
+
+    onAuthStateChanged(auth, (user) => {
+      if (unsub) { unsub(); unsub = null; }
+      currentUser = user || null;
+      first = true;
+      if (!user) { bridge.onAuth(null, 'signedout'); return; }
+      bridge.onAuth(user, 'connecting');
+
+      unsub = onSnapshot(userDoc(user.uid), (snap) => {
+        if (snap.metadata.hasPendingWrites) return;   // écho de nos propres écritures
+        if (!snap.exists()) {                          // cloud vide → migration montante
+          if (first) { first = false; pushNow(bridge.getLocal()); }
+          else bridge.onAuth(user, 'synced');
+          return;
+        }
+        let cloud = null;
+        try { cloud = JSON.parse(snap.data().payloadJSON); } catch (e) { cloud = null; }
+        if (cloud == null) { bridge.onAuth(user, 'synced'); return; }
+
+        if (first) {                                   // 1re connexion : fusion sûre
+          first = false;
+          const merged = bridge.merge(cloud);
+          bridge.apply(merged);
+          if (JSON.stringify(merged) !== JSON.stringify(cloud)) pushNow(merged);
+          else bridge.onAuth(user, 'synced');
+          return;
+        }
+        bridge.apply(cloud);                           // mise à jour d'un autre appareil
+        bridge.onAuth(user, 'synced');
+      }, () => bridge.onAuth(user, 'error'));
+    });
+  }
 </script>
 
 </body>
