@@ -439,8 +439,8 @@
                 <h1>☀️ Amortissement Solaire</h1>
                 <button id="cloud-icon-btn" class="cloud-icon-btn" onclick="openCloudModal()" aria-label="État de la sauvegarde cloud" title="État de la sauvegarde cloud">
                     <svg viewBox="0 0 24 24" width="26" height="26" aria-hidden="true">
-                        <path d="M7 18.5a4.5 4.5 0 0 1-.6-8.96A6 6 0 0 1 18.2 9.7 3.8 3.8 0 0 1 18 17.5H7z"
-                              fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/>
+                        <path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"
+                              fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
                     </svg>
                 </button>
             </div>
@@ -745,12 +745,12 @@
                 </p>
                 <div class="row" id="cloud-pseudo-row">
                     <label for="cloud-pseudo">Votre pseudo <span style="color: var(--neon-red);">*</span> — pour vous identifier dans le cloud</label>
-                    <input type="text" id="cloud-pseudo" maxlength="40" autocomplete="off" placeholder="ex. Julien, Maison, Papa…" oninput="onPseudoInput(this)">
+                    <input type="text" id="cloud-pseudo" maxlength="40" autocomplete="off" placeholder="Choisissez un pseudo" oninput="onPseudoInput(this)">
                 </div>
                 <div id="cloud-status" class="cloud-status"><span class="cloud-dot" style="color: var(--text-muted); background: currentColor;"></span>Non connecté</div>
                 <button class="btn-blue" id="cloud-signin" onclick="cloudSignIn()">Se connecter avec Google</button>
                 <button class="btn-gray" id="cloud-signout" onclick="cloudSignOut()" style="display: none;">Se déconnecter</button>
-                <p id="cloud-pseudo-hint" style="display: none; font-size: 11px; color: var(--neon-red); margin-top: 8px;">Choisissez d'abord un pseudo ci-dessus pour activer la connexion.</p>
+                <p id="cloud-pseudo-hint" style="display: none; font-size: 11px; color: var(--neon-red); margin-top: 8px;">Choisissez un pseudo ci-dessus pour vous identifier dans le cloud.</p>
             </div>
 
             <div class="card config-card">
@@ -1504,19 +1504,24 @@
     function onPseudoInput(el) {
         safeSetItem(PSEUDO_KEY, (el.value || '').replace(/\s+/g, ' ').trimStart().slice(0, 40));
         refreshPseudoGate();
+        // Si déjà connecté, on pousse pour que le cloud reprenne le pseudo à jour
+        // (met à jour « Dernière modif » et le champ pseudo du document Firestore).
+        if (getPseudo() && window.Cloud && window.Cloud.isSignedIn && window.Cloud.isSignedIn() && window.Cloud.push) {
+            window.Cloud.push(collectCloudPayload());
+        }
     }
     // Active/désactive le bouton « Se connecter avec Google » selon la présence d'un pseudo.
     function refreshPseudoGate() {
         const hasPseudo = !!getPseudo();
         const btn = document.getElementById('cloud-signin');
         const hint = document.getElementById('cloud-pseudo-hint');
-        const signedIn = !!cloudMeta.email;
         if (btn) {
             btn.disabled = !hasPseudo;
             btn.classList.toggle('btn-disabled', !hasPseudo);
         }
-        // N'affiche l'aide que si le bouton de connexion est visible (déconnecté) sans pseudo.
-        if (hint) hint.style.display = (!hasPseudo && !signedIn && cloudState !== 'unconfigured') ? '' : 'none';
+        // Invite à saisir un pseudo dès qu'il manque (connecté ou non), sauf si le cloud
+        // n'est pas configuré.
+        if (hint) hint.style.display = (!hasPseudo && cloudState !== 'unconfigured') ? '' : 'none';
     }
     // Pré-remplit le champ pseudo au démarrage et applique le gate.
     function initPseudoField() {
@@ -2500,7 +2505,10 @@
           first = false;
           const merged = bridge.merge(cloud);
           bridge.apply(merged);
-          if (JSON.stringify(merged) !== JSON.stringify(cloud)) pushNow(merged);
+          // Réécrit si les données diffèrent OU si le pseudo du cloud n'est pas à jour
+          // (ex. ancien nom d'appareil laissé par une version précédente).
+          const pseudoStale = !!bridge.pseudo() && data.updatedByName !== bridge.pseudo();
+          if (JSON.stringify(merged) !== JSON.stringify(cloud) || pseudoStale) pushNow(merged);
           else bridge.onAuth(user, 'synced');
           return;
         }

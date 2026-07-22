@@ -1,6 +1,6 @@
 /* Service worker : rend l'application utilisable hors ligne.
    Incrémenter CACHE_VERSION à chaque mise à jour des fichiers de l'app. */
-const CACHE_VERSION = 'solaire-v12';
+const CACHE_VERSION = 'solaire-v13';
 const APP_SHELL = [
   './',
   './index.html',
