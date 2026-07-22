@@ -425,6 +425,8 @@
   .cloud-legend li { display: flex; align-items: center; font-size: 13.5px; color: var(--text-muted); }
   .cloud-legend li b { color: var(--text-main); font-weight: 600; margin-right: 3px; }
   .cloud-legend .cloud-dot { width: 12px; height: 12px; margin-right: 11px; }
+  #cloud-signin.btn-disabled { opacity: 0.5; cursor: not-allowed; }
+  #cloud-pseudo.pseudo-missing { border-color: var(--neon-red) !important; }
 </style>
 </head>
 <body>
@@ -741,9 +743,14 @@
                     synchroniser automatiquement entre tous vos appareils. L'application reste
                     utilisable hors ligne : le cloud vient en plus, il ne remplace rien.
                 </p>
+                <div class="row" id="cloud-pseudo-row">
+                    <label for="cloud-pseudo">Votre pseudo <span style="color: var(--neon-red);">*</span> — pour vous identifier dans le cloud</label>
+                    <input type="text" id="cloud-pseudo" maxlength="40" autocomplete="off" placeholder="ex. Julien, Maison, Papa…" oninput="onPseudoInput(this)">
+                </div>
                 <div id="cloud-status" class="cloud-status"><span class="cloud-dot" style="color: var(--text-muted); background: currentColor;"></span>Non connecté</div>
                 <button class="btn-blue" id="cloud-signin" onclick="cloudSignIn()">Se connecter avec Google</button>
                 <button class="btn-gray" id="cloud-signout" onclick="cloudSignOut()" style="display: none;">Se déconnecter</button>
+                <p id="cloud-pseudo-hint" style="display: none; font-size: 11px; color: var(--neon-red); margin-top: 8px;">Choisissez d'abord un pseudo ci-dessus pour activer la connexion.</p>
             </div>
 
             <div class="card config-card">
@@ -1449,7 +1456,20 @@
         return out;
     }
 
-    function cloudSignIn() { if (window.Cloud) window.Cloud.signIn(); }
+    function cloudSignIn() {
+        // Pseudo obligatoire avant toute connexion : il identifie l'utilisateur dans Firebase.
+        if (!getPseudo()) {
+            const input = document.getElementById('cloud-pseudo');
+            if (input) {
+                input.focus();
+                input.classList.add('pseudo-missing');
+                setTimeout(() => input.classList.remove('pseudo-missing'), 1600);
+            }
+            refreshPseudoGate();
+            return;
+        }
+        if (window.Cloud) window.Cloud.signIn();
+    }
     function cloudSignOut() { if (window.Cloud) window.Cloud.signOut(); }
 
     /* === Indicateur d'état « cloud » (icône nuage + modale). ==============
@@ -1473,16 +1493,37 @@
     };
     function cloudStateInfo() { return CLOUD_STATES[cloudState] || CLOUD_STATES.signedout; }
 
-    // Nom d'appareil (pour « Dernière modif : … ») : généré une fois par appareil
-    // et conservé en local. Sert à savoir quel appareil a écrit en dernier.
-    const DEVICE_KEY = 'solar_device_name';
-    const DEVICE_NAMES = ['Aurore','Nuage','Étoile','Comète','Horizon','Zéphyr','Boréal','Solstice','Lagon','Ambre','Mistral','Cirrus'];
-    function getDeviceName() {
-        let n = safeGetItem(DEVICE_KEY);
-        if (!n) { n = DEVICE_NAMES[Math.floor(Math.random() * DEVICE_NAMES.length)]; safeSetItem(DEVICE_KEY, n); }
-        return n;
+    // Pseudo de l'utilisateur : OBLIGATOIRE avant de pouvoir se connecter au cloud.
+    // Poussé dans le document Firestore (champs `pseudo` + `updatedByName`) pour
+    // identifier chaque utilisateur dans la console Firebase, et affiché en
+    // « Dernière modif : … » dans la modale.
+    const PSEUDO_KEY = 'solar_pseudo';
+    function getPseudo() { return (safeGetItem(PSEUDO_KEY) || '').trim(); }
+    window.__getPseudo = () => getPseudo();
+
+    function onPseudoInput(el) {
+        safeSetItem(PSEUDO_KEY, (el.value || '').replace(/\s+/g, ' ').trimStart().slice(0, 40));
+        refreshPseudoGate();
     }
-    window.__getDeviceName = () => getDeviceName();
+    // Active/désactive le bouton « Se connecter avec Google » selon la présence d'un pseudo.
+    function refreshPseudoGate() {
+        const hasPseudo = !!getPseudo();
+        const btn = document.getElementById('cloud-signin');
+        const hint = document.getElementById('cloud-pseudo-hint');
+        const signedIn = !!cloudMeta.email;
+        if (btn) {
+            btn.disabled = !hasPseudo;
+            btn.classList.toggle('btn-disabled', !hasPseudo);
+        }
+        // N'affiche l'aide que si le bouton de connexion est visible (déconnecté) sans pseudo.
+        if (hint) hint.style.display = (!hasPseudo && !signedIn && cloudState !== 'unconfigured') ? '' : 'none';
+    }
+    // Pré-remplit le champ pseudo au démarrage et applique le gate.
+    function initPseudoField() {
+        const input = document.getElementById('cloud-pseudo');
+        if (input && !input.value) input.value = getPseudo();
+        refreshPseudoGate();
+    }
 
     function escHtml(s) {
         return String(s).replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
@@ -1527,6 +1568,7 @@
         const signOutBtn = document.getElementById('cloud-signout');
         if (signInBtn) signInBtn.style.display = (signedIn || cloudState === 'unconfigured') ? 'none' : '';
         if (signOutBtn) signOutBtn.style.display = signedIn ? '' : 'none';
+        refreshPseudoGate();
     }
 
     function renderCloudModal() {
@@ -2313,6 +2355,7 @@
 
     loadLocalData();
     updateCloudIndicator();   // icône nuage grise dès le lancement (avant toute synchro)
+    initPseudoField();        // pré-remplit le pseudo et verrouille la connexion si absent
 </script>
 
 <!-- ======================================================================
@@ -2350,7 +2393,7 @@
     merge:      (c) => (window.__mergeData ? window.__mergeData(c) : c),
     onAuth:     (u, s) => { if (window.__onAuthChange) window.__onAuthChange(u, s); },
     onMeta:     (m) => { if (window.__onCloudMeta) window.__onCloudMeta(m); },
-    deviceName: () => (window.__getDeviceName ? window.__getDeviceName() : '')
+    pseudo:     () => (window.__getPseudo ? window.__getPseudo() : '')
   };
 
   const CONFIGURED = !!(firebaseConfig.apiKey && firebaseConfig.projectId);
@@ -2388,7 +2431,9 @@
       bridge.onAuth(currentUser, 'saving');
       setDoc(userDoc(currentUser.uid), {
         payloadJSON: JSON.stringify(payload),
-        updatedByName: bridge.deviceName(),
+        pseudo: bridge.pseudo(),
+        email: currentUser.email || null,
+        updatedByName: bridge.pseudo(),
         updatedAt: serverTimestamp()
       })
         .then(() => bridge.onAuth(currentUser, 'synced'))
