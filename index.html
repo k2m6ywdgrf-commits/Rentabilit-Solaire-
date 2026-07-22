@@ -399,18 +399,17 @@
   /* --- Icône nuage d'état dans l'en-tête --- */
   .header-titlerow { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
   .cloud-icon-btn {
-    position: relative; background: none; border: none; padding: 5px; cursor: pointer;
-    color: var(--text-muted); line-height: 0; width: auto; border-radius: 10px;
-    flex-shrink: 0; transition: color 0.2s ease, background 0.2s ease;
+    position: relative; border: none; padding: 0; cursor: pointer; flex-shrink: 0;
+    width: 44px; height: 44px; border-radius: 14px;
+    display: flex; align-items: center; justify-content: center;
+    color: #8b93a7; line-height: 0;
+    background: linear-gradient(135deg, rgba(139,147,167,0.16), rgba(255,255,255,0.03));
+    transition: color 0.2s ease, background 0.2s ease;
   }
-  .cloud-icon-btn:hover { background: var(--surface-2); }
   .cloud-icon-btn svg { display: block; filter: drop-shadow(0 0 5px currentColor); }
-  .cloud-icon-dot {
-    position: absolute; right: 2px; bottom: 3px; width: 8px; height: 8px; border-radius: 50%;
-    background: currentColor; box-shadow: 0 0 5px currentColor; border: 2px solid var(--bg-base);
-  }
 
   /* --- Modal « État du cloud » --- */
+  .cloud-modal-eyebrow { font-size: 12px; font-weight: 700; letter-spacing: 1.6px; text-transform: uppercase; color: var(--neon-blue); }
   .cloud-state-card {
     background: var(--surface-1); border: 1px solid var(--border-glass);
     border-radius: 14px; padding: 16px; margin-bottom: 18px;
@@ -426,7 +425,6 @@
   .cloud-legend li { display: flex; align-items: center; font-size: 13.5px; color: var(--text-muted); }
   .cloud-legend li b { color: var(--text-main); font-weight: 600; margin-right: 3px; }
   .cloud-legend .cloud-dot { width: 12px; height: 12px; margin-right: 11px; }
-  .cloud-modal-actions { margin-top: 18px; }
 </style>
 </head>
 <body>
@@ -442,7 +440,6 @@
                         <path d="M7 18.5a4.5 4.5 0 0 1-.6-8.96A6 6 0 0 1 18.2 9.7 3.8 3.8 0 0 1 18 17.5H7z"
                               fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/>
                     </svg>
-                    <span class="cloud-icon-dot" id="cloud-icon-dot"></span>
                 </button>
             </div>
             <p class="subtitle">Suivez la rentabilité de votre installation photovoltaïque</p>
@@ -851,28 +848,24 @@
 <div id="cloudModal" class="modal-overlay" onclick="closeCloudModal()">
     <div class="modal-content" onclick="event.stopPropagation()">
         <div class="modal-header">
-            <h3 class="modal-title">☁️ État du cloud</h3>
+            <span class="cloud-modal-eyebrow">État du cloud</span>
             <button class="close-modal" onclick="closeCloudModal()">✕</button>
         </div>
         <div class="cloud-state-card">
             <div class="cloud-state-head">
-                <span class="cloud-dot" id="cloud-modal-dot" style="color: var(--text-muted); background: currentColor;"></span>
-                <span class="cloud-state-label" id="cloud-modal-label">Non connecté</span>
+                <span class="cloud-dot" id="cloud-modal-dot" style="color: #8b93a7; background: currentColor;"></span>
+                <span class="cloud-state-label" id="cloud-modal-label" style="color: #8b93a7;">Non connecté</span>
             </div>
-            <div class="cloud-state-line" id="cloud-modal-account">Non connecté — données locales uniquement</div>
+            <div class="cloud-state-line" id="cloud-modal-account">Données locales sur cet appareil uniquement</div>
             <div class="cloud-state-line" id="cloud-modal-modif" style="display: none;"></div>
         </div>
         <div class="cloud-legend-title">Signification de l'icône</div>
         <ul class="cloud-legend">
-            <li><span class="cloud-dot" style="color: var(--text-muted); background: currentColor;"></span><b>Gris</b> — cloud disponible, non connecté</li>
-            <li><span class="cloud-dot" style="color: var(--neon-green); background: currentColor;"></span><b>Vert</b> — synchronisé</li>
-            <li><span class="cloud-dot" style="color: var(--neon-orange); background: currentColor;"></span><b>Jaune</b> — enregistrement en cours</li>
-            <li><span class="cloud-dot" style="color: var(--neon-red); background: currentColor;"></span><b>Rouge</b> — erreur de synchronisation</li>
+            <li><span class="cloud-dot" style="color: #8b93a7; background: currentColor;"></span><b>Gris</b> — cloud disponible, non connecté</li>
+            <li><span class="cloud-dot" style="color: #34d399; background: currentColor;"></span><b>Vert</b> — synchronisé</li>
+            <li><span class="cloud-dot" style="color: #e0a92e; background: currentColor;"></span><b>Jaune</b> — enregistrement en cours</li>
+            <li><span class="cloud-dot" style="color: #fb7185; background: currentColor;"></span><b>Rouge</b> — erreur de synchronisation</li>
         </ul>
-        <div class="cloud-modal-actions">
-            <button class="btn-blue" id="cloud-modal-signin" onclick="cloudSignIn()">Se connecter avec Google</button>
-            <button class="btn-gray" id="cloud-modal-signout" onclick="cloudSignOut()" style="display: none;">Se déconnecter</button>
-        </div>
     </div>
 </div>
 
@@ -1456,11 +1449,29 @@
         return out;
     }
 
-    // Reçoit les changements d'état d'authentification / de synchro depuis le module.
-    window.__onAuthChange = (user, status) => updateSyncUI(user, status);
-
     function cloudSignIn() { if (window.Cloud) window.Cloud.signIn(); }
     function cloudSignOut() { if (window.Cloud) window.Cloud.signOut(); }
+
+    /* === Indicateur d'état « cloud » (icône nuage + modale). ==============
+       L'UI lit deux globales tenues à jour par la couche de synchro :
+         cloudState : 'synced'|'saving'|'connected'|'error'|'signedout'
+                      |'offline'|'unconfigured'
+         cloudMeta  : { email, updatedAt (Date|null), updatedBy (string|null) }
+       ===================================================================== */
+    let cloudState = 'signedout';
+    let cloudMeta = { email: null, updatedAt: null, updatedBy: null };
+
+    // Couleur du nuage + dégradé assorti + libellé, par état.
+    const CLOUD_STATES = {
+        synced:       { color: '#34d399', glow: 'rgba(52,211,153,0.22)',  label: 'Synchronisé' },
+        saving:       { color: '#e0a92e', glow: 'rgba(224,169,46,0.22)',  label: 'Enregistrement en cours' },
+        connected:    { color: '#8b93a7', glow: 'rgba(139,147,167,0.16)', label: 'Connexion au cloud…' },
+        error:        { color: '#fb7185', glow: 'rgba(251,113,133,0.22)', label: 'Erreur de synchronisation' },
+        signedout:    { color: '#8b93a7', glow: 'rgba(139,147,167,0.16)', label: 'Non connecté' },
+        offline:      { color: '#8b93a7', glow: 'rgba(139,147,167,0.16)', label: 'Cloud indisponible' },
+        unconfigured: { color: '#8b93a7', glow: 'rgba(139,147,167,0.16)', label: 'Cloud non configuré' }
+    };
+    function cloudStateInfo() { return CLOUD_STATES[cloudState] || CLOUD_STATES.signedout; }
 
     // Nom d'appareil (pour « Dernière modif : … ») : généré une fois par appareil
     // et conservé en local. Sert à savoir quel appareil a écrit en dernier.
@@ -1481,81 +1492,66 @@
         const p = n => String(n).padStart(2, '0');
         return `${p(d.getDate())}/${p(d.getMonth() + 1)}/${d.getFullYear()} ${p(d.getHours())}:${p(d.getMinutes())}`;
     }
-    function cloudStatusMeta(status) {
-        switch (status) {
-            case 'disabled':   return { color: 'var(--text-muted)',  label: 'Sauvegarde cloud non configurée' };
-            case 'signedout':  return { color: 'var(--text-muted)',  label: 'Non connecté' };
-            case 'connecting': return { color: 'var(--neon-orange)', label: 'Connexion…' };
-            case 'saving':     return { color: 'var(--neon-orange)', label: 'Enregistrement…' };
-            case 'synced':     return { color: 'var(--neon-green)',  label: 'Synchronisé' };
-            case 'error':      return { color: 'var(--neon-red)',    label: 'Erreur de synchronisation' };
-            default:           return { color: 'var(--text-muted)',  label: 'Non connecté' };
-        }
-    }
 
-    // État courant de la synchro, mémorisé pour (re)peindre le modal à l'ouverture.
-    let cloudState = { user: null, status: 'signedout' };
-    let cloudMeta = { at: null, by: '' };
-
+    // Reçu du module à chaque changement d'auth / de synchro.
+    window.__onAuthChange = (user, status) => {
+        cloudState = status;
+        cloudMeta.email = (user && user.email) ? user.email : null;
+        updateCloudIndicator();
+        renderCloudModal();
+    };
     // Reçu du module à chaque snapshot serveur : date + appareil de la dernière écriture.
-    window.__onCloudMeta = (meta) => { cloudMeta = meta || { at: null, by: '' }; renderCloudModal(); };
+    window.__onCloudMeta = (meta) => {
+        cloudMeta.updatedAt = (meta && meta.at instanceof Date) ? meta.at : null;
+        cloudMeta.updatedBy = (meta && meta.by) ? meta.by : null;
+        renderCloudModal();
+    };
 
-    function updateSyncUI(user, status) {
-        cloudState = { user: user || null, status };
-        const sm = cloudStatusMeta(status);
-        const signedIn = !!user;
+    // Icône nuage de l'en-tête (couleur + dégordé = état) + indicateur des Paramètres.
+    function updateCloudIndicator() {
+        const s = cloudStateInfo();
+        const signedIn = !!cloudMeta.email;
 
-        // 1) Icône nuage dans l'en-tête (couleur = état).
         const iconBtn = document.getElementById('cloud-icon-btn');
-        if (iconBtn) iconBtn.style.color = sm.color;
+        if (iconBtn) {
+            iconBtn.style.color = s.color;   // le SVG hérite via currentColor
+            iconBtn.style.background = `linear-gradient(135deg, ${s.glow}, rgba(255,255,255,0.03))`;
+        }
 
-        // 2) Indicateur en ligne dans la carte Paramètres.
         const statusEl = document.getElementById('cloud-status');
         if (statusEl) {
-            const who = user && (user.email || user.displayName) ? (user.email || user.displayName) : '';
-            statusEl.innerHTML = `<span class="cloud-dot" style="color:${sm.color}; background:currentColor;"></span>${sm.label}` +
-                (who ? ` <span class="cloud-email">· ${escHtml(who)}</span>` : '');
+            statusEl.innerHTML = `<span class="cloud-dot" style="color:${s.color}; background:currentColor;"></span>${s.label}` +
+                (cloudMeta.email ? ` <span class="cloud-email">· ${escHtml(cloudMeta.email)}</span>` : '');
         }
         const signInBtn = document.getElementById('cloud-signin');
         const signOutBtn = document.getElementById('cloud-signout');
-        if (signInBtn) signInBtn.style.display = (signedIn || status === 'disabled') ? 'none' : '';
+        if (signInBtn) signInBtn.style.display = (signedIn || cloudState === 'unconfigured') ? 'none' : '';
         if (signOutBtn) signOutBtn.style.display = signedIn ? '' : 'none';
-
-        // 3) Modal détaillé.
-        renderCloudModal();
     }
 
     function renderCloudModal() {
-        const sm = cloudStatusMeta(cloudState.status);
-        const user = cloudState.user;
-        const signedIn = !!user;
+        const s = cloudStateInfo();
+        const signedIn = !!cloudMeta.email;
         const dot = document.getElementById('cloud-modal-dot');
         const label = document.getElementById('cloud-modal-label');
         const account = document.getElementById('cloud-modal-account');
         const modif = document.getElementById('cloud-modal-modif');
-        const signInBtn = document.getElementById('cloud-modal-signin');
-        const signOutBtn = document.getElementById('cloud-modal-signout');
-        if (dot) dot.style.color = sm.color;
-        if (label) label.textContent = sm.label;
+        if (dot) dot.style.color = s.color;
+        if (label) { label.textContent = s.label; label.style.color = s.color; }
         if (account) {
-            const email = user && user.email ? user.email : '';
-            account.innerHTML = email
-                ? `Connecté : <span class="cloud-acct">${escHtml(email)}</span>`
-                : (cloudState.status === 'disabled'
-                    ? 'Collez votre firebaseConfig pour activer la sauvegarde cloud.'
-                    : 'Non connecté — données locales uniquement');
+            account.innerHTML = signedIn
+                ? `Connecté : <span class="cloud-acct">${escHtml(cloudMeta.email)}</span>`
+                : 'Données locales sur cet appareil uniquement';
         }
         if (modif) {
-            const when = fmtDateTime(cloudMeta.at);
-            if (when && signedIn) {
+            const when = fmtDateTime(cloudMeta.updatedAt);
+            if (signedIn && when) {
                 modif.style.display = '';
-                modif.innerHTML = `Dernière modif : <b>${escHtml(cloudMeta.by || '—')}</b> · ${when}`;
+                modif.innerHTML = `Dernière modif : <b>${escHtml(cloudMeta.updatedBy || 'Appareil inconnu')}</b> · ${when}`;
             } else {
                 modif.style.display = 'none';
             }
         }
-        if (signInBtn) signInBtn.style.display = (signedIn || cloudState.status === 'disabled') ? 'none' : '';
-        if (signOutBtn) signOutBtn.style.display = signedIn ? '' : 'none';
     }
 
     function openCloudModal() {
@@ -2316,6 +2312,7 @@
     }
 
     loadLocalData();
+    updateCloudIndicator();   // icône nuage grise dès le lancement (avant toute synchro)
 </script>
 
 <!-- ======================================================================
@@ -2325,26 +2322,24 @@
      l'utilisateur est connecté. Voir le playbook « Intégration Firebase ».
      ====================================================================== -->
 <script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-app.js";
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-app.js";
   import { getAuth, GoogleAuthProvider, signInWithPopup, signInWithRedirect,
            getRedirectResult, onAuthStateChanged, signOut }
-    from "https://www.gstatic.com/firebasejs/12.0.0/firebase-auth.js";
+    from "https://www.gstatic.com/firebasejs/12.16.0/firebase-auth.js";
   import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager,
            doc, onSnapshot, setDoc, deleteDoc, serverTimestamp }
-    from "https://www.gstatic.com/firebasejs/12.0.0/firebase-firestore.js";
+    from "https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js";
 
-  /* ⚠️  À REMPLIR — coller ici l'objet firebaseConfig de VOTRE projet Firebase
-     (Console Firebase → Paramètres du projet → Vos applications → SDK).
-     Créez un projet DISTINCT de « Mon Suivi de Rémunération ».
-     La apiKey n'est PAS un secret : c'est un identifiant public. La sécurité
-     repose entièrement sur les règles Firestore + l'authentification. */
+  /* Config Firebase du projet « suivi-solaire ». La apiKey n'est PAS un secret :
+     c'est un identifiant public. La sécurité repose entièrement sur les règles
+     Firestore (users/{uid} réservé à son propriétaire) + l'authentification. */
   const firebaseConfig = {
-    apiKey: "",
-    authDomain: "",
-    projectId: "",
-    storageBucket: "",
-    messagingSenderId: "",
-    appId: ""
+    apiKey: "AIzaSyBd-4yEHajoOl0tEJpQ6vzBXRYo4AEJ0NE",
+    authDomain: "suivi-solaire-39e7f.firebaseapp.com",
+    projectId: "suivi-solaire-39e7f",
+    storageBucket: "suivi-solaire-39e7f.firebasestorage.app",
+    messagingSenderId: "828857038016",
+    appId: "1:828857038016:web:25eccf0aba601ed7bda925"
   };
 
   // Pont vers le script principal (classique). Les fonctions window.__* sont
@@ -2370,7 +2365,7 @@
       push() {},
       deleteRemote() { return Promise.resolve(); }
     };
-    bridge.onAuth(null, 'disabled');
+    bridge.onAuth(null, 'unconfigured');
   } else {
     const app  = initializeApp(firebaseConfig);
     const auth = getAuth(app);
@@ -2438,7 +2433,7 @@
       currentUser = user || null;
       first = true;
       if (!user) { bridge.onAuth(null, 'signedout'); return; }
-      bridge.onAuth(user, 'connecting');
+      bridge.onAuth(user, 'connected');
 
       unsub = onSnapshot(userDoc(user.uid), (snap) => {
         if (snap.metadata.hasPendingWrites) return;   // écho de nos propres écritures
@@ -2466,7 +2461,7 @@
         }
         bridge.apply(cloud);                           // mise à jour d'un autre appareil
         bridge.onAuth(user, 'synced');
-      }, () => bridge.onAuth(user, 'error'));
+      }, () => bridge.onAuth(user, navigator.onLine ? 'error' : 'offline'));
     });
   }
 </script>
