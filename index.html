@@ -394,7 +394,9 @@
   /* --- Sauvegarde cloud (Firebase) : indicateur d'état --- */
   .cloud-status { display: flex; align-items: center; font-size: 13px; color: var(--text-muted); margin-bottom: 12px; line-height: 1.4; }
   .cloud-dot { width: 9px; height: 9px; border-radius: 50%; display: inline-block; margin-right: 8px; flex-shrink: 0; box-shadow: 0 0 6px currentColor; }
-  .cloud-email { color: var(--text-muted); }
+  .cloud-account { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+  .cloud-avatar { width: 36px; height: 36px; border-radius: 50%; object-fit: cover; border: 1px solid var(--border-glass); flex-shrink: 0; }
+  .cloud-account-email { font-size: 13px; color: var(--text-main); font-weight: 600; word-break: break-all; }
 
   /* --- Icône nuage d'état dans l'en-tête --- */
   .header-titlerow { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
@@ -425,8 +427,6 @@
   .cloud-legend li { display: flex; align-items: center; font-size: 13.5px; color: var(--text-muted); }
   .cloud-legend li b { color: var(--text-main); font-weight: 600; margin-right: 3px; }
   .cloud-legend .cloud-dot { width: 12px; height: 12px; margin-right: 11px; }
-  #cloud-signin.btn-disabled { opacity: 0.5; cursor: not-allowed; }
-  #cloud-pseudo.pseudo-missing { border-color: var(--neon-red) !important; }
 </style>
 </head>
 <body>
@@ -743,14 +743,13 @@
                     synchroniser automatiquement entre tous vos appareils. L'application reste
                     utilisable hors ligne : le cloud vient en plus, il ne remplace rien.
                 </p>
-                <div class="row" id="cloud-pseudo-row">
-                    <label for="cloud-pseudo">Votre pseudo <span style="color: var(--neon-red);">*</span> — pour vous identifier dans le cloud</label>
-                    <input type="text" id="cloud-pseudo" maxlength="40" autocomplete="off" placeholder="Choisissez un pseudo" oninput="onPseudoInput(this)">
+                <div id="cloud-account" class="cloud-account" style="display: none;">
+                    <img id="cloud-avatar" class="cloud-avatar" src="" alt="" style="display: none;">
+                    <span id="cloud-account-email" class="cloud-account-email"></span>
                 </div>
                 <div id="cloud-status" class="cloud-status"><span class="cloud-dot" style="color: var(--text-muted); background: currentColor;"></span>Non connecté</div>
                 <button class="btn-blue" id="cloud-signin" onclick="cloudSignIn()">Se connecter avec Google</button>
                 <button class="btn-gray" id="cloud-signout" onclick="cloudSignOut()" style="display: none;">Se déconnecter</button>
-                <p id="cloud-pseudo-hint" style="display: none; font-size: 11px; color: var(--neon-red); margin-top: 8px;">Choisissez un pseudo ci-dessus pour vous identifier dans le cloud.</p>
             </div>
 
             <div class="card config-card">
@@ -1457,17 +1456,6 @@
     }
 
     function cloudSignIn() {
-        // Pseudo obligatoire avant toute connexion : il identifie l'utilisateur dans Firebase.
-        if (!getPseudo()) {
-            const input = document.getElementById('cloud-pseudo');
-            if (input) {
-                input.focus();
-                input.classList.add('pseudo-missing');
-                setTimeout(() => input.classList.remove('pseudo-missing'), 1600);
-            }
-            refreshPseudoGate();
-            return;
-        }
         if (window.Cloud) window.Cloud.signIn();
     }
     function cloudSignOut() { if (window.Cloud) window.Cloud.signOut(); }
@@ -1479,7 +1467,7 @@
          cloudMeta  : { email, updatedAt (Date|null), updatedBy (string|null) }
        ===================================================================== */
     let cloudState = 'signedout';
-    let cloudMeta = { email: null, updatedAt: null, updatedBy: null };
+    let cloudMeta = { email: null, photoURL: null, updatedAt: null, updatedBy: null };
 
     // Couleur du nuage + dégradé assorti + libellé, par état.
     const CLOUD_STATES = {
@@ -1492,43 +1480,6 @@
         unconfigured: { color: '#8b93a7', glow: 'rgba(139,147,167,0.16)', label: 'Cloud non configuré' }
     };
     function cloudStateInfo() { return CLOUD_STATES[cloudState] || CLOUD_STATES.signedout; }
-
-    // Pseudo de l'utilisateur : OBLIGATOIRE avant de pouvoir se connecter au cloud.
-    // Poussé dans le document Firestore (champs `pseudo` + `updatedByName`) pour
-    // identifier chaque utilisateur dans la console Firebase, et affiché en
-    // « Dernière modif : … » dans la modale.
-    const PSEUDO_KEY = 'solar_pseudo';
-    function getPseudo() { return (safeGetItem(PSEUDO_KEY) || '').trim(); }
-    window.__getPseudo = () => getPseudo();
-
-    function onPseudoInput(el) {
-        safeSetItem(PSEUDO_KEY, (el.value || '').replace(/\s+/g, ' ').trimStart().slice(0, 40));
-        refreshPseudoGate();
-        // Si déjà connecté, on pousse pour que le cloud reprenne le pseudo à jour
-        // (met à jour « Dernière modif » et le champ pseudo du document Firestore).
-        if (getPseudo() && window.Cloud && window.Cloud.isSignedIn && window.Cloud.isSignedIn() && window.Cloud.push) {
-            window.Cloud.push(collectCloudPayload());
-        }
-    }
-    // Active/désactive le bouton « Se connecter avec Google » selon la présence d'un pseudo.
-    function refreshPseudoGate() {
-        const hasPseudo = !!getPseudo();
-        const btn = document.getElementById('cloud-signin');
-        const hint = document.getElementById('cloud-pseudo-hint');
-        if (btn) {
-            btn.disabled = !hasPseudo;
-            btn.classList.toggle('btn-disabled', !hasPseudo);
-        }
-        // Invite à saisir un pseudo dès qu'il manque (connecté ou non), sauf si le cloud
-        // n'est pas configuré.
-        if (hint) hint.style.display = (!hasPseudo && cloudState !== 'unconfigured') ? '' : 'none';
-    }
-    // Pré-remplit le champ pseudo au démarrage et applique le gate.
-    function initPseudoField() {
-        const input = document.getElementById('cloud-pseudo');
-        if (input && !input.value) input.value = getPseudo();
-        refreshPseudoGate();
-    }
 
     function escHtml(s) {
         return String(s).replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
@@ -1543,6 +1494,7 @@
     window.__onAuthChange = (user, status) => {
         cloudState = status;
         cloudMeta.email = (user && user.email) ? user.email : null;
+        cloudMeta.photoURL = (user && user.photoURL) ? user.photoURL : null;
         updateCloudIndicator();
         renderCloudModal();
     };
@@ -1566,14 +1518,22 @@
 
         const statusEl = document.getElementById('cloud-status');
         if (statusEl) {
-            statusEl.innerHTML = `<span class="cloud-dot" style="color:${s.color}; background:currentColor;"></span>${s.label}` +
-                (cloudMeta.email ? ` <span class="cloud-email">· ${escHtml(cloudMeta.email)}</span>` : '');
+            statusEl.innerHTML = `<span class="cloud-dot" style="color:${s.color}; background:currentColor;"></span>${s.label}`;
         }
+        const accountEl = document.getElementById('cloud-account');
+        const avatarEl = document.getElementById('cloud-avatar');
+        const emailEl = document.getElementById('cloud-account-email');
+        if (accountEl) accountEl.style.display = signedIn ? '' : 'none';
+        if (avatarEl) {
+            if (cloudMeta.photoURL) { avatarEl.src = cloudMeta.photoURL; avatarEl.style.display = ''; }
+            else { avatarEl.removeAttribute('src'); avatarEl.style.display = 'none'; }
+        }
+        if (emailEl) emailEl.textContent = cloudMeta.email || '';
+
         const signInBtn = document.getElementById('cloud-signin');
         const signOutBtn = document.getElementById('cloud-signout');
         if (signInBtn) signInBtn.style.display = (signedIn || cloudState === 'unconfigured') ? 'none' : '';
         if (signOutBtn) signOutBtn.style.display = signedIn ? '' : 'none';
-        refreshPseudoGate();
     }
 
     function renderCloudModal() {
@@ -2360,7 +2320,6 @@
 
     loadLocalData();
     updateCloudIndicator();   // icône nuage grise dès le lancement (avant toute synchro)
-    initPseudoField();        // pré-remplit le pseudo et verrouille la connexion si absent
 </script>
 
 <!-- ======================================================================
@@ -2380,7 +2339,8 @@
 
   /* Config Firebase du projet « suivi-solaire ». La apiKey n'est PAS un secret :
      c'est un identifiant public. La sécurité repose entièrement sur les règles
-     Firestore (users/{uid} réservé à son propriétaire) + l'authentification. */
+     Firestore (users/{email} réservé à son propriétaire, identifié par son
+     adresse e-mail Google en minuscules) + l'authentification. */
   const firebaseConfig = {
     apiKey: "AIzaSyBd-4yEHajoOl0tEJpQ6vzBXRYo4AEJ0NE",
     authDomain: "suivi-solaire-39e7f.firebaseapp.com",
@@ -2397,8 +2357,7 @@
     apply:      (d) => { if (window.__applyCloudData) window.__applyCloudData(d); },
     merge:      (c) => (window.__mergeData ? window.__mergeData(c) : c),
     onAuth:     (u, s) => { if (window.__onAuthChange) window.__onAuthChange(u, s); },
-    onMeta:     (m) => { if (window.__onCloudMeta) window.__onCloudMeta(m); },
-    pseudo:     () => (window.__getPseudo ? window.__getPseudo() : '')
+    onMeta:     (m) => { if (window.__onCloudMeta) window.__onCloudMeta(m); }
   };
 
   const CONFIGURED = !!(firebaseConfig.apiKey && firebaseConfig.projectId);
@@ -2429,16 +2388,16 @@
     let pushTimer = null;
     let lastPayload = null;
 
-    const userDoc = (uid) => doc(db, 'users', uid);
+    // Identification par e-mail (en minuscules), pas par uid : voir firestore.rules.
+    const userDoc = (email) => doc(db, 'users', String(email).toLowerCase());
 
     function pushNow(payload) {
-      if (!currentUser || !payload) return;
+      if (!currentUser || !currentUser.email || !payload) return;
       bridge.onAuth(currentUser, 'saving');
-      setDoc(userDoc(currentUser.uid), {
+      setDoc(userDoc(currentUser.email), {
         payloadJSON: JSON.stringify(payload),
-        pseudo: bridge.pseudo(),
-        email: currentUser.email || null,
-        updatedByName: bridge.pseudo(),
+        email: currentUser.email,
+        updatedByName: currentUser.displayName || '',
         updatedAt: serverTimestamp()
       })
         .then(() => bridge.onAuth(currentUser, 'synced'))
@@ -2470,8 +2429,8 @@
         pushTimer = setTimeout(() => pushNow(lastPayload), 800);
       },
       deleteRemote() {
-        if (!currentUser) return Promise.resolve();
-        return deleteDoc(userDoc(currentUser.uid)).catch(() => {});
+        if (!currentUser || !currentUser.email) return Promise.resolve();
+        return deleteDoc(userDoc(currentUser.email)).catch(() => {});
       }
     };
 
@@ -2480,12 +2439,16 @@
 
     onAuthStateChanged(auth, (user) => {
       if (unsub) { unsub(); unsub = null; }
-      currentUser = user || null;
       first = true;
-      if (!user) { bridge.onAuth(null, 'signedout'); return; }
+      if (!user || !user.email) {   // pas d'e-mail = pas d'identifiant Firestore possible
+        currentUser = null;
+        bridge.onAuth(null, 'signedout');
+        return;
+      }
+      currentUser = user;
       bridge.onAuth(user, 'connected');
 
-      unsub = onSnapshot(userDoc(user.uid), (snap) => {
+      unsub = onSnapshot(userDoc(user.email), (snap) => {
         if (snap.metadata.hasPendingWrites) return;   // écho de nos propres écritures
         if (!snap.exists()) {                          // cloud vide → migration montante
           if (first) { first = false; pushNow(bridge.getLocal()); }
@@ -2505,10 +2468,10 @@
           first = false;
           const merged = bridge.merge(cloud);
           bridge.apply(merged);
-          // Réécrit si les données diffèrent OU si le pseudo du cloud n'est pas à jour
-          // (ex. ancien nom d'appareil laissé par une version précédente).
-          const pseudoStale = !!bridge.pseudo() && data.updatedByName !== bridge.pseudo();
-          if (JSON.stringify(merged) !== JSON.stringify(cloud) || pseudoStale) pushNow(merged);
+          // Réécrit si les données diffèrent OU si le nom associé au cloud n'est pas
+          // à jour (ex. nom Google changé depuis la dernière écriture).
+          const nameStale = !!user.displayName && data.updatedByName !== user.displayName;
+          if (JSON.stringify(merged) !== JSON.stringify(cloud) || nameStale) pushNow(merged);
           else bridge.onAuth(user, 'synced');
           return;
         }
