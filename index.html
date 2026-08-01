@@ -2339,8 +2339,8 @@
 
   /* Config Firebase du projet « suivi-solaire ». La apiKey n'est PAS un secret :
      c'est un identifiant public. La sécurité repose entièrement sur les règles
-     Firestore (users/{email} réservé à son propriétaire, identifié par son
-     adresse e-mail Google en minuscules) + l'authentification. */
+     Firestore (users/{uid} réservé à son propriétaire, identifié par l'uid
+     Firebase : request.auth.uid == userId) + l'authentification. */
   const firebaseConfig = {
     apiKey: "AIzaSyBd-4yEHajoOl0tEJpQ6vzBXRYo4AEJ0NE",
     authDomain: "suivi-solaire-39e7f.firebaseapp.com",
@@ -2388,13 +2388,13 @@
     let pushTimer = null;
     let lastPayload = null;
 
-    // Identification par e-mail (en minuscules), pas par uid : voir firestore.rules.
-    const userDoc = (email) => doc(db, 'users', String(email).toLowerCase());
+    // Identification par uid Firebase : voir firestore.rules (request.auth.uid == userId).
+    const userDoc = (uid) => doc(db, 'users', uid);
 
     function pushNow(payload) {
-      if (!currentUser || !currentUser.email || !payload) return;
+      if (!currentUser || !payload) return;
       bridge.onAuth(currentUser, 'saving');
-      setDoc(userDoc(currentUser.email), {
+      setDoc(userDoc(currentUser.uid), {
         payloadJSON: JSON.stringify(payload),
         email: currentUser.email,
         updatedByName: currentUser.displayName || '',
@@ -2429,8 +2429,8 @@
         pushTimer = setTimeout(() => pushNow(lastPayload), 800);
       },
       deleteRemote() {
-        if (!currentUser || !currentUser.email) return Promise.resolve();
-        return deleteDoc(userDoc(currentUser.email)).catch(() => {});
+        if (!currentUser) return Promise.resolve();
+        return deleteDoc(userDoc(currentUser.uid)).catch(() => {});
       }
     };
 
@@ -2440,7 +2440,7 @@
     onAuthStateChanged(auth, (user) => {
       if (unsub) { unsub(); unsub = null; }
       first = true;
-      if (!user || !user.email) {   // pas d'e-mail = pas d'identifiant Firestore possible
+      if (!user) {
         currentUser = null;
         bridge.onAuth(null, 'signedout');
         return;
@@ -2448,7 +2448,7 @@
       currentUser = user;
       bridge.onAuth(user, 'connected');
 
-      unsub = onSnapshot(userDoc(user.email), (snap) => {
+      unsub = onSnapshot(userDoc(user.uid), (snap) => {
         if (snap.metadata.hasPendingWrites) return;   // écho de nos propres écritures
         if (!snap.exists()) {                          // cloud vide → migration montante
           if (first) { first = false; pushNow(bridge.getLocal()); }
