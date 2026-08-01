@@ -1,10 +1,16 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    match /users/{emailId} {
-      allow read, write: if request.auth != null
-        && request.auth.token.email != null
-        && request.auth.token.email.lower() == emailId;
+
+    // Accès au document principal de l'utilisateur
+    match /users/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+
+      // Accès à toutes les sous-collections (ex: /users/ID/projets/123)
+      match /{document=**} {
+        allow read, write: if request.auth != null && request.auth.uid == userId;
+      }
     }
+
   }
 }
