@@ -409,6 +409,23 @@
     transition: color 0.2s ease, background 0.2s ease;
   }
   .cloud-icon-btn svg { display: block; filter: drop-shadow(0 0 5px currentColor); }
+  .cloud-notify-dot {
+    position: absolute; top: 4px; right: 4px; width: 10px; height: 10px; border-radius: 50%;
+    background: var(--neon-red); box-shadow: 0 0 6px rgba(244,63,94,0.8), 0 0 0 2px var(--bg-base);
+  }
+
+  /* --- UID du compte cloud (copiable) --- */
+  .cloud-uid-row { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; font-size: 11.5px; color: var(--text-muted); }
+  .cloud-uid-label { flex-shrink: 0; font-weight: 600; }
+  .cloud-uid-value { flex: 1; min-width: 0; word-break: break-all; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; color: var(--text-main); }
+  .cloud-uid-copy-btn { width: auto; flex-shrink: 0; padding: 4px 8px; background: var(--surface-3); border-radius: 8px; font-size: 13px; }
+
+  /* --- Espace Administrateur (validation des comptes) --- */
+  .admin-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 8px 0; border-bottom: 1px solid var(--border-soft); }
+  .admin-row:last-child { border-bottom: none; }
+  .admin-row-email { font-size: 12.5px; word-break: break-all; }
+  .admin-row-actions { display: flex; gap: 6px; flex-shrink: 0; }
+  .btn-approve-item { background: transparent; color: var(--neon-green); width: auto; padding: 4px 8px; font-size: 11px; border-radius: 6px; border: 1px solid rgba(74,222,128,0.3); font-weight: 500; }
 
   /* --- Modal « État du cloud » --- */
   .cloud-modal-eyebrow { font-size: 12px; font-weight: 700; letter-spacing: 1.6px; text-transform: uppercase; color: var(--neon-blue); }
@@ -442,6 +459,7 @@
                         <path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"
                               fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
                     </svg>
+                    <span id="cloud-notify-dot" class="cloud-notify-dot" style="display: none;" aria-hidden="true"></span>
                 </button>
             </div>
             <p class="subtitle">Suivez la rentabilité de votre installation photovoltaïque</p>
@@ -747,9 +765,28 @@
                     <img id="cloud-avatar" class="cloud-avatar" src="" alt="" style="display: none;">
                     <span id="cloud-account-email" class="cloud-account-email"></span>
                 </div>
+                <div id="cloud-uid-row" class="cloud-uid-row" style="display: none;">
+                    <span class="cloud-uid-label">UID :</span>
+                    <span id="cloud-uid-value" class="cloud-uid-value"></span>
+                    <button type="button" id="cloud-uid-copy" class="cloud-uid-copy-btn" onclick="copyUid()" aria-label="Copier l'UID" title="Copier l'UID">📋</button>
+                </div>
                 <div id="cloud-status" class="cloud-status"><span class="cloud-dot" style="color: var(--text-muted); background: currentColor;"></span>Non connecté</div>
+                <p id="cloud-card-note" style="font-size: 11.5px; color: var(--text-muted); margin: -6px 0 12px; display: none;"></p>
                 <button class="btn-blue" id="cloud-signin" onclick="cloudSignIn()">Se connecter avec Google</button>
                 <button class="btn-gray" id="cloud-signout" onclick="cloudSignOut()" style="display: none;">Se déconnecter</button>
+            </div>
+
+            <div class="card card-tint-purple" id="admin-card" style="display: none;">
+                <h2>🛡️ Espace Administrateur</h2>
+                <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 12px;">
+                    Visible uniquement par votre compte. Validez ici les nouveaux comptes Google qui tentent de se connecter à la sauvegarde cloud.
+                </p>
+                <button class="btn-blue" id="admin-open-btn" onclick="openAdminModal()">
+                    🔔 Comptes en attente <span id="admin-pending-count-badge" class="badge aid" style="display: none;"></span>
+                </button>
+                <hr class="divider">
+                <div class="cloud-legend-title">Comptes déjà autorisés</div>
+                <div id="admin-approved-list"><p class="empty-note">Aucun compte autorisé pour le moment.</p></div>
             </div>
 
             <div class="card config-card">
@@ -864,6 +901,7 @@
             </div>
             <div class="cloud-state-line" id="cloud-modal-account">Données locales sur cet appareil uniquement</div>
             <div class="cloud-state-line" id="cloud-modal-modif" style="display: none;"></div>
+            <div class="cloud-state-line" id="cloud-modal-note" style="display: none;"></div>
         </div>
         <div class="cloud-legend-title">Signification de l'icône</div>
         <ul class="cloud-legend">
@@ -872,6 +910,16 @@
             <li><span class="cloud-dot" style="color: #e0a92e; background: currentColor;"></span><b>Jaune</b> — enregistrement en cours</li>
             <li><span class="cloud-dot" style="color: #fb7185; background: currentColor;"></span><b>Rouge</b> — erreur de synchronisation</li>
         </ul>
+    </div>
+</div>
+
+<div id="adminModal" class="modal-overlay" onclick="closeAdminModal()">
+    <div class="modal-content" onclick="event.stopPropagation()">
+        <div class="modal-header">
+            <h3 class="modal-title">🔔 Demandes de connexion en attente</h3>
+            <button class="close-modal" onclick="closeAdminModal()">✕</button>
+        </div>
+        <div id="admin-pending-list"><p class="empty-note">Aucune demande en attente.</p></div>
     </div>
 </div>
 
@@ -1467,13 +1515,20 @@
          cloudMeta  : { email, updatedAt (Date|null), updatedBy (string|null) }
        ===================================================================== */
     let cloudState = 'signedout';
-    let cloudMeta = { email: null, photoURL: null, updatedAt: null, updatedBy: null };
+    let cloudMeta = { email: null, photoURL: null, uid: null, updatedAt: null, updatedBy: null };
+
+    // Espace Administrateur : validation des comptes Google (voir firestore.rules).
+    let isAdminUser = false;
+    let pendingApprovals = [];
+    let approvedAccounts = [];
 
     // Couleur du nuage + dégradé assorti + libellé, par état.
     const CLOUD_STATES = {
         synced:       { color: '#34d399', glow: 'rgba(52,211,153,0.22)',  label: 'Synchronisé' },
         saving:       { color: '#e0a92e', glow: 'rgba(224,169,46,0.22)',  label: 'Enregistrement en cours' },
         connected:    { color: '#8b93a7', glow: 'rgba(139,147,167,0.16)', label: 'Connexion au cloud…' },
+        pending:      { color: '#fbbf24', glow: 'rgba(251,191,36,0.22)',  label: 'En attente de validation' },
+        rejected:     { color: '#f43f5e', glow: 'rgba(244,63,94,0.22)',   label: 'Accès refusé' },
         error:        { color: '#fb7185', glow: 'rgba(251,113,133,0.22)', label: 'Erreur de synchronisation' },
         signedout:    { color: '#8b93a7', glow: 'rgba(139,147,167,0.16)', label: 'Non connecté' },
         offline:      { color: '#8b93a7', glow: 'rgba(139,147,167,0.16)', label: 'Cloud indisponible' },
@@ -1495,8 +1550,28 @@
         cloudState = status;
         cloudMeta.email = (user && user.email) ? user.email : null;
         cloudMeta.photoURL = (user && user.photoURL) ? user.photoURL : null;
+        cloudMeta.uid = (user && user.uid) ? user.uid : null;
         updateCloudIndicator();
         renderCloudModal();
+    };
+    // Reçu du module Firebase : true si l'uid connecté est l'administrateur
+    // (déterminé côté règles Firestore, jamais codé en dur côté client).
+    window.__onAdminStatus = (isAdmin) => {
+        isAdminUser = isAdmin;
+        updateAdminUI();
+        updateCloudNotifyDot();
+    };
+    // Reçu du module Firebase : liste des demandes de connexion en attente (admin uniquement).
+    window.__onPendingApprovals = (list) => {
+        pendingApprovals = Array.isArray(list) ? list : [];
+        renderPendingBadge();
+        renderAdminModal();
+        updateCloudNotifyDot();
+    };
+    // Reçu du module Firebase : liste des comptes déjà autorisés (admin uniquement).
+    window.__onApprovedAccounts = (list) => {
+        approvedAccounts = Array.isArray(list) ? list : [];
+        renderApprovedList();
     };
     // Reçu du module à chaque snapshot serveur : date + appareil de la dernière écriture.
     window.__onCloudMeta = (meta) => {
@@ -1530,10 +1605,51 @@
         }
         if (emailEl) emailEl.textContent = cloudMeta.email || '';
 
+        const uidRow = document.getElementById('cloud-uid-row');
+        const uidEl = document.getElementById('cloud-uid-value');
+        if (uidRow) uidRow.style.display = signedIn ? '' : 'none';
+        if (uidEl) uidEl.textContent = cloudMeta.uid || '';
+
+        const noteEl = document.getElementById('cloud-card-note');
+        if (noteEl) {
+            if (cloudState === 'pending') {
+                noteEl.style.display = '';
+                noteEl.textContent = "Votre demande a été transmise à l'administrateur. En attendant sa validation, vos données restent stockées uniquement sur cet appareil.";
+            } else if (cloudState === 'rejected') {
+                noteEl.style.display = '';
+                noteEl.textContent = "L'accès à la sauvegarde cloud a été refusé. Vos données restent stockées uniquement sur cet appareil.";
+            } else {
+                noteEl.style.display = 'none';
+            }
+        }
+
         const signInBtn = document.getElementById('cloud-signin');
         const signOutBtn = document.getElementById('cloud-signout');
         if (signInBtn) signInBtn.style.display = (signedIn || cloudState === 'unconfigured') ? 'none' : '';
         if (signOutBtn) signOutBtn.style.display = signedIn ? '' : 'none';
+
+        updateCloudNotifyDot();
+    }
+
+    function copyUid() {
+        if (!cloudMeta.uid) return;
+        const btn = document.getElementById('cloud-uid-copy');
+        const flash = () => { if (!btn) return; const old = btn.textContent; btn.textContent = '✅'; setTimeout(() => { btn.textContent = old; }, 1200); };
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(cloudMeta.uid).then(flash).catch(() => fallbackCopyText(cloudMeta.uid, flash));
+        } else {
+            fallbackCopyText(cloudMeta.uid, flash);
+        }
+    }
+    function fallbackCopyText(text, done) {
+        const ta = document.createElement('textarea');
+        ta.value = text;
+        ta.style.position = 'fixed';
+        ta.style.opacity = '0';
+        document.body.appendChild(ta);
+        ta.select();
+        try { document.execCommand('copy'); if (done) done(); } catch (e) {}
+        document.body.removeChild(ta);
     }
 
     function renderCloudModal() {
@@ -1559,6 +1675,18 @@
                 modif.style.display = 'none';
             }
         }
+        const note = document.getElementById('cloud-modal-note');
+        if (note) {
+            if (cloudState === 'pending') {
+                note.style.display = '';
+                note.textContent = "Votre demande a été transmise à l'administrateur. Vos données restent en local en attendant.";
+            } else if (cloudState === 'rejected') {
+                note.style.display = '';
+                note.textContent = "Accès refusé par l'administrateur. Vos données restent en local sur cet appareil.";
+            } else {
+                note.style.display = 'none';
+            }
+        }
     }
 
     function openCloudModal() {
@@ -1569,6 +1697,73 @@
     function closeCloudModal() {
         const modal = document.getElementById('cloudModal');
         if (modal) modal.classList.remove('active');
+    }
+
+    /* === Espace Administrateur : validation des comptes Google. ===========
+       isAdminUser est déterminé côté Firestore (voir firestore.rules) : le
+       client ne connaît jamais l'UID admin, il constate juste que certaines
+       lectures lui sont autorisées. Rien à configurer côté code. ========= */
+    function updateAdminUI() {
+        const card = document.getElementById('admin-card');
+        if (card) card.style.display = isAdminUser ? '' : 'none';
+        if (!isAdminUser) closeAdminModal();
+    }
+
+    function updateCloudNotifyDot() {
+        const dot = document.getElementById('cloud-notify-dot');
+        if (dot) dot.style.display = (isAdminUser && pendingApprovals.length > 0) ? '' : 'none';
+    }
+
+    function renderPendingBadge() {
+        const badge = document.getElementById('admin-pending-count-badge');
+        if (!badge) return;
+        if (pendingApprovals.length > 0) { badge.style.display = ''; badge.textContent = pendingApprovals.length; }
+        else badge.style.display = 'none';
+    }
+
+    function renderAdminModal() {
+        const list = document.getElementById('admin-pending-list');
+        if (!list) return;
+        if (pendingApprovals.length === 0) {
+            list.innerHTML = '<p class="empty-note">Aucune demande en attente.</p>';
+            return;
+        }
+        list.innerHTML = pendingApprovals.map(p => `
+            <div class="admin-row">
+                <span class="admin-row-email">${escHtml(p.email || p.uid)}</span>
+                <div class="admin-row-actions">
+                    <button class="btn-approve-item" onclick="adminDecide('${p.uid}', true)">✅ Valider</button>
+                    <button class="btn-danger-item" onclick="adminDecide('${p.uid}', false)">🚫 Refuser</button>
+                </div>
+            </div>`).join('');
+    }
+
+    function renderApprovedList() {
+        const list = document.getElementById('admin-approved-list');
+        if (!list) return;
+        if (approvedAccounts.length === 0) {
+            list.innerHTML = '<p class="empty-note">Aucun compte autorisé pour le moment.</p>';
+            return;
+        }
+        list.innerHTML = approvedAccounts.map(a => `
+            <div class="admin-row"><span class="admin-row-email">${escHtml(a.email || a.uid)}</span></div>`).join('');
+    }
+
+    function openAdminModal() {
+        if (!isAdminUser) return;
+        renderAdminModal();
+        const modal = document.getElementById('adminModal');
+        if (modal) modal.classList.add('active');
+    }
+    function closeAdminModal() {
+        const modal = document.getElementById('adminModal');
+        if (modal) modal.classList.remove('active');
+    }
+
+    function adminDecide(uid, approve) {
+        if (!window.Admin) return;
+        const action = approve ? window.Admin.approve(uid) : window.Admin.reject(uid);
+        if (action && action.catch) action.catch(() => alert("Une erreur est survenue, réessayez."));
     }
 
     function resetToDefault() {
@@ -2334,7 +2529,8 @@
            getRedirectResult, onAuthStateChanged, signOut }
     from "https://www.gstatic.com/firebasejs/12.16.0/firebase-auth.js";
   import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager,
-           doc, onSnapshot, setDoc, deleteDoc, serverTimestamp }
+           doc, getDoc, onSnapshot, setDoc, updateDoc, deleteDoc, serverTimestamp,
+           collection, query, where }
     from "https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js";
 
   /* Config Firebase du projet « suivi-solaire ». La apiKey n'est PAS un secret :
@@ -2357,7 +2553,10 @@
     apply:      (d) => { if (window.__applyCloudData) window.__applyCloudData(d); },
     merge:      (c) => (window.__mergeData ? window.__mergeData(c) : c),
     onAuth:     (u, s) => { if (window.__onAuthChange) window.__onAuthChange(u, s); },
-    onMeta:     (m) => { if (window.__onCloudMeta) window.__onCloudMeta(m); }
+    onMeta:     (m) => { if (window.__onCloudMeta) window.__onCloudMeta(m); },
+    onAdmin:    (v) => { if (window.__onAdminStatus) window.__onAdminStatus(v); },
+    onPending:  (list) => { if (window.__onPendingApprovals) window.__onPendingApprovals(list); },
+    onApproved: (list) => { if (window.__onApprovedAccounts) window.__onApprovedAccounts(list); }
   };
 
   const CONFIGURED = !!(firebaseConfig.apiKey && firebaseConfig.projectId);
@@ -2372,7 +2571,12 @@
       push() {},
       deleteRemote() { return Promise.resolve(); }
     };
+    window.Admin = {
+      approve() { return Promise.resolve(); },
+      reject() { return Promise.resolve(); }
+    };
     bridge.onAuth(null, 'unconfigured');
+    bridge.onAdmin(false);
   } else {
     const app  = initializeApp(firebaseConfig);
     const auth = getAuth(app);
@@ -2383,13 +2587,18 @@
     });
 
     let currentUser = null;
-    let unsub = null;
+    let unsub = null;             // écoute /users/{uid} (synchro des données)
+    let approvalUnsub = null;     // écoute /approvals/{uid} (mon propre statut)
+    let pendingUnsub = null;      // écoute /approvals status==pending (admin)
+    let approvedUnsub = null;     // écoute /approvals status==approved (admin)
     let first = true;
+    let syncActive = false;       // true une fois la synchro /users démarrée (admin ou compte approuvé)
     let pushTimer = null;
     let lastPayload = null;
 
     // Identification par uid Firebase : voir firestore.rules (request.auth.uid == userId).
     const userDoc = (uid) => doc(db, 'users', uid);
+    const approvalDoc = (uid) => doc(db, 'approvals', uid);
 
     function pushNow(payload) {
       if (!currentUser || !payload) return;
@@ -2423,7 +2632,7 @@
       signOut() { signOut(auth).catch(() => {}); },
       // setDoc débouncé : on regroupe les écritures rapprochées.
       push(payload) {
-        if (!currentUser) return;                 // no-op si déconnecté
+        if (!currentUser || !syncActive) return;  // no-op si déconnecté ou pas (encore) validé
         lastPayload = payload;
         clearTimeout(pushTimer);
         pushTimer = setTimeout(() => pushNow(lastPayload), 800);
@@ -2434,20 +2643,19 @@
       }
     };
 
-    // Récupère le résultat d'un éventuel signInWithRedirect (retour mobile).
-    getRedirectResult(auth).catch(() => {});
+    // Réservé à l'administrateur : Firestore refuse ces écritures pour tout
+    // autre uid (voir firestore.rules, fonction isAdmin()).
+    window.Admin = {
+      approve(uid) { return updateDoc(approvalDoc(uid), { status: 'approved', decidedAt: serverTimestamp() }); },
+      reject(uid) { return updateDoc(approvalDoc(uid), { status: 'rejected', decidedAt: serverTimestamp() }); }
+    };
 
-    onAuthStateChanged(auth, (user) => {
-      if (unsub) { unsub(); unsub = null; }
+    // Démarre (une seule fois par connexion) la synchro des données /users/{uid} :
+    // l'admin y a toujours droit, un compte normal seulement une fois approuvé.
+    function startUserSync(user) {
+      if (unsub) return;
+      syncActive = true;
       first = true;
-      if (!user) {
-        currentUser = null;
-        bridge.onAuth(null, 'signedout');
-        return;
-      }
-      currentUser = user;
-      bridge.onAuth(user, 'connected');
-
       unsub = onSnapshot(userDoc(user.uid), (snap) => {
         if (snap.metadata.hasPendingWrites) return;   // écho de nos propres écritures
         if (!snap.exists()) {                          // cloud vide → migration montante
@@ -2478,6 +2686,84 @@
         bridge.apply(cloud);                           // mise à jour d'un autre appareil
         bridge.onAuth(user, 'synced');
       }, () => bridge.onAuth(user, navigator.onLine ? 'error' : 'offline'));
+    }
+
+    // Écoute mon propre statut de validation, en le créant s'il n'existe pas
+    // encore ("pending" par défaut). Si /approvals n'est pas encore connu des
+    // règles Firestore (nouvelle validation pas encore activée côté console),
+    // on retombe sur l'ancien comportement pour ne rien casser en attendant.
+    function watchOwnApproval(user) {
+      approvalUnsub = onSnapshot(approvalDoc(user.uid), (snap) => {
+        if (!snap.exists()) {
+          setDoc(approvalDoc(user.uid), {
+            email: user.email,
+            displayName: user.displayName || '',
+            status: 'pending',
+            requestedAt: serverTimestamp()
+          }).catch(() => {});
+          bridge.onAuth(user, 'pending');
+          return;
+        }
+        const status = snap.data().status;
+        if (status === 'approved') {
+          if (!syncActive) { bridge.onAuth(user, 'connected'); startUserSync(user); }
+        } else if (status === 'rejected') {
+          bridge.onAuth(user, 'rejected');
+        } else {
+          bridge.onAuth(user, 'pending');
+        }
+      }, (err) => {
+        if (err && err.code === 'permission-denied') { startUserSync(user); return; }
+        bridge.onAuth(user, navigator.onLine ? 'error' : 'offline');
+      });
+    }
+
+    // Écoutes réservées à l'admin : demandes en attente + comptes déjà autorisés.
+    // Alimentent la pastille de notification et le panneau des Réglages.
+    function watchPendingApprovals() {
+      pendingUnsub = onSnapshot(query(collection(db, 'approvals'), where('status', '==', 'pending')), (snap) => {
+        bridge.onPending(snap.docs.map(d => ({ uid: d.id, ...d.data() })));
+      }, () => bridge.onPending([]));
+    }
+    function watchApprovedAccounts() {
+      approvedUnsub = onSnapshot(query(collection(db, 'approvals'), where('status', '==', 'approved')), (snap) => {
+        bridge.onApproved(snap.docs.map(d => ({ uid: d.id, ...d.data() })));
+      }, () => bridge.onApproved([]));
+    }
+
+    // Récupère le résultat d'un éventuel signInWithRedirect (retour mobile).
+    getRedirectResult(auth).catch(() => {});
+
+    onAuthStateChanged(auth, (user) => {
+      if (unsub) { unsub(); unsub = null; }
+      if (approvalUnsub) { approvalUnsub(); approvalUnsub = null; }
+      if (pendingUnsub) { pendingUnsub(); pendingUnsub = null; }
+      if (approvedUnsub) { approvedUnsub(); approvedUnsub = null; }
+      syncActive = false;
+      first = true;
+      if (!user) {
+        currentUser = null;
+        bridge.onAuth(null, 'signedout');
+        bridge.onAdmin(false);
+        bridge.onPending([]);
+        bridge.onApproved([]);
+        return;
+      }
+      currentUser = user;
+      bridge.onAuth(user, 'connected');
+
+      // Sonde admin : cette lecture n'est autorisée qu'à l'UID administrateur
+      // (voir firestore.rules). Le client ne connaît jamais cet UID lui-même,
+      // il constate seulement que Firestore la lui accorde.
+      getDoc(doc(db, 'admin', 'status')).then(() => {
+        bridge.onAdmin(true);
+        startUserSync(user);       // l'admin est toujours considéré comme approuvé
+        watchPendingApprovals();
+        watchApprovedAccounts();
+      }).catch(() => {
+        bridge.onAdmin(false);
+        watchOwnApproval(user);
+      });
     });
   }
 </script>

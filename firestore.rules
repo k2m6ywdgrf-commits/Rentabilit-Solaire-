@@ -2,13 +2,51 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Accès au document principal de l'utilisateur
+    // UID Firebase du compte administrateur (le seul autorisé à valider les
+    // nouveaux comptes). À remplacer par le véritable UID avant déploiement.
+    function isAdmin() {
+      return request.auth != null && request.auth.uid == "REPLACE_WITH_ADMIN_UID";
+    }
+
+    // Sonde utilisée par l'application pour savoir si l'utilisateur connecté
+    // est l'administrateur : aucune donnée sensible, sert uniquement à tester
+    // la permission de lecture (voir index.html, sonde admin).
+    match /admin/{doc} {
+      allow read, write: if isAdmin();
+    }
+
+    // Demandes de validation de compte : un document par utilisateur Google
+    // (hors admin), nommé par son uid.
+    match /approvals/{uid} {
+      // Chacun peut lire son propre statut ; l'admin peut tout lire (et lister).
+      allow read: if request.auth != null && (request.auth.uid == uid || isAdmin());
+
+      // Un utilisateur ne peut créer que sa propre demande, en statut "pending".
+      allow create: if request.auth != null && request.auth.uid == uid
+                    && request.resource.data.status == 'pending'
+                    && request.resource.data.email == request.auth.token.email;
+
+      // Seul l'admin peut faire évoluer (valider/refuser) ou supprimer une demande.
+      allow update, delete: if isAdmin();
+    }
+
+    // Document principal de l'utilisateur : accès réservé au propriétaire,
+    // et uniquement une fois son compte approuvé par l'admin (l'admin a
+    // toujours accès à son propre document).
     match /users/{userId} {
-      allow read, write: if request.auth != null && request.auth.uid == userId;
+      allow read, write: if request.auth != null && request.auth.uid == userId && (
+        isAdmin() ||
+        (exists(/databases/$(database)/documents/approvals/$(userId)) &&
+         get(/databases/$(database)/documents/approvals/$(userId)).data.status == 'approved')
+      );
 
       // Accès à toutes les sous-collections (ex: /users/ID/projets/123)
       match /{document=**} {
-        allow read, write: if request.auth != null && request.auth.uid == userId;
+        allow read, write: if request.auth != null && request.auth.uid == userId && (
+          isAdmin() ||
+          (exists(/databases/$(database)/documents/approvals/$(userId)) &&
+           get(/databases/$(database)/documents/approvals/$(userId)).data.status == 'approved')
+        );
       }
     }
 
