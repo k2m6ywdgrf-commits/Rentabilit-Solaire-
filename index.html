@@ -950,6 +950,36 @@
         theme: 'auto'          // 'auto' (système), 'light' ou 'dark'
     };
 
+    /* --- Nettoyage défensif des données externes (import JSON, fusion cloud).
+       Ces données ne passent pas par les champs du formulaire (toujours
+       numériques) : un fichier corrompu ou une donnée poussée par une
+       version future ne doit jamais faire planter l'appli au rendu. --- */
+    function sanitizeAnnualRow(r) {
+        if (!r || typeof r !== 'object' || !r.date) return null;
+        const out = {
+            date: String(r.date),
+            detail: typeof r.detail === 'string' ? r.detail : '',
+            facture: Number(r.facture) || 0,
+            kwh: Number(r.kwh) || 0,
+            revente: Number(r.revente) || 0
+        };
+        const mc = parseInt(r.monthsCount, 10);
+        if (!isNaN(mc) && mc >= 1 && mc < 12) out.monthsCount = mc;
+        return out;
+    }
+    function sanitizeMonthlyRow(r) {
+        if (!r || typeof r !== 'object' || !/^\d{4}-\d{2}$/.test(r.ym)) return null;
+        return { ym: r.ym, facture: Number(r.facture) || 0, kwh: Number(r.kwh) || 0, revente: Number(r.revente) || 0 };
+    }
+    function sanitizeAid(a) {
+        if (!a || typeof a !== 'object' || !a.date) return null;
+        const montant = Number(a.montant);
+        return isNaN(montant) ? null : { date: String(a.date), montant };
+    }
+    function sanitizeRows(arr, fn) {
+        return Array.isArray(arr) ? arr.map(fn).filter(Boolean) : [];
+    }
+
     let config = { ...DEFAULT_CONFIG };
     let appData = [];        // années saisies manuellement (la référence vit dans config)
     let monthlyData = [];    // relevés mensuels [{ym: "2024-07", facture, kwh, revente}]
@@ -1096,14 +1126,24 @@
         if (rawConfig) {
             try {
                 config = { ...DEFAULT_CONFIG, ...JSON.parse(rawConfig) };
-                appData = JSON.parse(safeGetItem(DATA_KEY)) || [];
-                monthlyData = JSON.parse(safeGetItem(MONTHLY_KEY)) || [];
-                oneTimeAids = JSON.parse(safeGetItem(AIDS_KEY)) || [];
+                appData = sanitizeRows(JSON.parse(safeGetItem(DATA_KEY)) || [], sanitizeAnnualRow);
+                monthlyData = sanitizeRows(JSON.parse(safeGetItem(MONTHLY_KEY)) || [], sanitizeMonthlyRow);
+                oneTimeAids = sanitizeRows(JSON.parse(safeGetItem(AIDS_KEY)) || [], sanitizeAid);
             } catch(e) {}
         } else {
             migrateFromV1();
         }
-        launchApplication();
+        // Filet de sécurité : une donnée inattendue ne doit jamais laisser
+        // l'appli sur un écran blanc. En dernier recours, on repart des
+        // valeurs par défaut (sans toucher à la sauvegarde déjà sur disque).
+        try {
+            launchApplication();
+        } catch (e) {
+            console.error('Erreur au démarrage, réinitialisation de secours en mémoire :', e);
+            config = { ...DEFAULT_CONFIG };
+            appData = []; monthlyData = []; oneTimeAids = [];
+            launchApplication();
+        }
     }
 
     /* Migration transparente des données de l'ancienne version (v1) :
@@ -1137,9 +1177,9 @@
         } else {
             config.refKwh = refKwhV1;
         }
-        appData = rows.filter((r, i) => i !== refIdx);
+        appData = sanitizeRows(rows.filter((r, i) => i !== refIdx), sanitizeAnnualRow);
         monthlyData = [];
-        oneTimeAids = Array.isArray(aids) ? aids : [];
+        oneTimeAids = sanitizeRows(aids, sanitizeAid);
     }
 
     function importDataFromFile(event) {
@@ -1153,9 +1193,9 @@
                 if (parsed.config && parsed.appData) {
                     // Format v2
                     config = { ...DEFAULT_CONFIG, ...parsed.config };
-                    appData = Array.isArray(parsed.appData) ? parsed.appData : [];
-                    monthlyData = Array.isArray(parsed.monthlyData) ? parsed.monthlyData : [];
-                    oneTimeAids = Array.isArray(parsed.oneTimeAids) ? parsed.oneTimeAids : [];
+                    appData = sanitizeRows(parsed.appData, sanitizeAnnualRow);
+                    monthlyData = sanitizeRows(parsed.monthlyData, sanitizeMonthlyRow);
+                    oneTimeAids = sanitizeRows(parsed.oneTimeAids, sanitizeAid);
                 } else if (parsed.appData) {
                     // Ancien format v1
                     applyV1Payload(parsed.appData, parseFloat(parsed.appInvest) || 0, parseInt(parsed.refKwh) || 0, parsed.oneTimeAids || []);
@@ -1454,31 +1494,42 @@
         __applyingCloud = true;
         try {
             if (d.config && typeof d.config === 'object') config = { ...DEFAULT_CONFIG, ...d.config };
-            if (Array.isArray(d.appData)) appData = d.appData;
-            if (Array.isArray(d.monthlyData)) monthlyData = d.monthlyData;
-            if (Array.isArray(d.oneTimeAids)) oneTimeAids = d.oneTimeAids;
+            if (Array.isArray(d.appData)) appData = sanitizeRows(d.appData, sanitizeAnnualRow);
+            if (Array.isArray(d.monthlyData)) monthlyData = sanitizeRows(d.monthlyData, sanitizeMonthlyRow);
+            if (Array.isArray(d.oneTimeAids)) oneTimeAids = sanitizeRows(d.oneTimeAids, sanitizeAid);
             saveAllToLocalStorage();   // écrit le local, sans repousser vers le cloud
         } finally {
             __applyingCloud = false;
         }
-        launchApplication();
+        // Une donnée cloud inattendue ne doit jamais casser l'appli d'un autre
+        // appareil déjà en cours d'utilisation : on journalise et on continue.
+        try { launchApplication(); } catch (e) { console.error("Erreur lors de l'application des données cloud :", e); }
     };
 
     // Fusion NON destructive local + cloud à la première connexion (aucune perte).
     window.__mergeData = (cloud) => {
         const local = collectCloudPayload();
         if (!cloud || typeof cloud !== 'object') return local;
+        const cloudAppData = sanitizeRows(cloud.appData, sanitizeAnnualRow);
+        const cloudMonthly = sanitizeRows(cloud.monthlyData, sanitizeMonthlyRow);
+        const cloudAids = sanitizeRows(cloud.oneTimeAids, sanitizeAid);
         const isCfg = (c) => c && c.invest > 0 && c.refFacture > 0 && c.refKwh > 0;
         let mergedConfig;
         if (isCfg(cloud.config)) mergedConfig = { ...DEFAULT_CONFIG, ...cloud.config };
         else if (isCfg(local.config)) mergedConfig = { ...DEFAULT_CONFIG, ...local.config };
         else mergedConfig = { ...DEFAULT_CONFIG, ...(cloud.config || {}), ...(local.config || {}) };
+        // Le thème est une préférence d'affichage propre à cet appareil : la
+        // fusion ne doit jamais l'écraser, même quand la config cloud "gagne"
+        // (sinon un réglage fait localement avant la 1re connexion disparaît).
+        if (local.config && ['light', 'dark', 'auto'].includes(local.config.theme)) {
+            mergedConfig.theme = local.config.theme;
+        }
         return {
             schema: CLOUD_SCHEMA,
             config: mergedConfig,
-            appData: unionBy(local.appData, cloud.appData, r => r.date),
-            monthlyData: unionBy(local.monthlyData, cloud.monthlyData, r => r.ym),
-            oneTimeAids: unionByJSON(local.oneTimeAids, cloud.oneTimeAids)
+            appData: unionBy(local.appData, cloudAppData, r => r.date),
+            monthlyData: unionBy(local.monthlyData, cloudMonthly, r => r.ym),
+            oneTimeAids: unionByJSON(local.oneTimeAids, cloudAids)
         };
     };
 
@@ -1535,6 +1586,15 @@
         unconfigured: { color: '#8b93a7', glow: 'rgba(139,147,167,0.16)', label: 'Cloud non configuré' }
     };
     function cloudStateInfo() { return CLOUD_STATES[cloudState] || CLOUD_STATES.signedout; }
+
+    // Texte explicatif affiché (carte Réglages + modal) quand le compte est
+    // en attente de validation ou refusé. Centralisé pour éviter les deux
+    // versions légèrement différentes du même message.
+    function cloudStatusNote() {
+        if (cloudState === 'pending') return "Votre demande a été transmise à l'administrateur. Vos données restent uniquement sur cet appareil en attendant sa validation.";
+        if (cloudState === 'rejected') return "L'accès à la sauvegarde cloud a été refusé. Vos données restent uniquement sur cet appareil.";
+        return '';
+    }
 
     function escHtml(s) {
         return String(s).replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
@@ -1612,15 +1672,9 @@
 
         const noteEl = document.getElementById('cloud-card-note');
         if (noteEl) {
-            if (cloudState === 'pending') {
-                noteEl.style.display = '';
-                noteEl.textContent = "Votre demande a été transmise à l'administrateur. En attendant sa validation, vos données restent stockées uniquement sur cet appareil.";
-            } else if (cloudState === 'rejected') {
-                noteEl.style.display = '';
-                noteEl.textContent = "L'accès à la sauvegarde cloud a été refusé. Vos données restent stockées uniquement sur cet appareil.";
-            } else {
-                noteEl.style.display = 'none';
-            }
+            const noteText = cloudStatusNote();
+            noteEl.style.display = noteText ? '' : 'none';
+            noteEl.textContent = noteText;
         }
 
         const signInBtn = document.getElementById('cloud-signin');
@@ -1677,15 +1731,9 @@
         }
         const note = document.getElementById('cloud-modal-note');
         if (note) {
-            if (cloudState === 'pending') {
-                note.style.display = '';
-                note.textContent = "Votre demande a été transmise à l'administrateur. Vos données restent en local en attendant.";
-            } else if (cloudState === 'rejected') {
-                note.style.display = '';
-                note.textContent = "Accès refusé par l'administrateur. Vos données restent en local sur cet appareil.";
-            } else {
-                note.style.display = 'none';
-            }
+            const noteText = cloudStatusNote();
+            note.style.display = noteText ? '' : 'none';
+            note.textContent = noteText;
         }
     }
 
@@ -2643,6 +2691,19 @@
       }
     };
 
+    // Une modif juste avant fermeture/masquage de l'onglet ne doit pas rester
+    // coincée dans le débounce de 800 ms : on force l'écriture immédiatement.
+    function flushPendingPush() {
+      if (!pushTimer) return;
+      clearTimeout(pushTimer);
+      pushTimer = null;
+      pushNow(lastPayload);
+    }
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'hidden') flushPendingPush();
+    });
+    window.addEventListener('pagehide', flushPendingPush);
+
     // Réservé à l'administrateur : Firestore refuse ces écritures pour tout
     // autre uid (voir firestore.rules, fonction isAdmin()).
     window.Admin = {
@@ -2732,7 +2793,34 @@
     }
 
     // Récupère le résultat d'un éventuel signInWithRedirect (retour mobile).
-    getRedirectResult(auth).catch(() => {});
+    // Ne rejette QUE si une tentative de connexion a réellement échoué (pas
+    // d'appel ici si aucune redirection n'était en cours) : on peut donc
+    // remonter l'erreur sans risque de faux positif.
+    getRedirectResult(auth).catch(() => bridge.onAuth(null, 'error'));
+
+    // Sonde admin : cette lecture n'est autorisée qu'à l'UID administrateur
+    // (voir firestore.rules). Le client ne connaît jamais cet UID lui-même,
+    // il constate seulement que Firestore la lui accorde. Seul un vrai refus
+    // de permission ("permission-denied") permet de conclure "pas admin" —
+    // une erreur réseau/indisponibilité ne doit jamais faire conclure ça à
+    // tort (sinon un admin hors-ligne se verrait créer une demande "pending"
+    // sur son propre compte). On retente une fois avant d'abandonner.
+    function probeAdmin(user, attempt) {
+      getDoc(doc(db, 'admin', 'status')).then(() => {
+        bridge.onAdmin(true);
+        startUserSync(user);       // l'admin est toujours considéré comme approuvé
+        watchPendingApprovals();
+        watchApprovedAccounts();
+      }).catch((err) => {
+        if (err && err.code === 'permission-denied') {
+          bridge.onAdmin(false);
+          watchOwnApproval(user);
+          return;
+        }
+        if (attempt < 1) { setTimeout(() => probeAdmin(user, attempt + 1), 3000); return; }
+        bridge.onAuth(user, navigator.onLine ? 'error' : 'offline');
+      });
+    }
 
     onAuthStateChanged(auth, (user) => {
       if (unsub) { unsub(); unsub = null; }
@@ -2751,19 +2839,7 @@
       }
       currentUser = user;
       bridge.onAuth(user, 'connected');
-
-      // Sonde admin : cette lecture n'est autorisée qu'à l'UID administrateur
-      // (voir firestore.rules). Le client ne connaît jamais cet UID lui-même,
-      // il constate seulement que Firestore la lui accorde.
-      getDoc(doc(db, 'admin', 'status')).then(() => {
-        bridge.onAdmin(true);
-        startUserSync(user);       // l'admin est toujours considéré comme approuvé
-        watchPendingApprovals();
-        watchApprovedAccounts();
-      }).catch(() => {
-        bridge.onAdmin(false);
-        watchOwnApproval(user);
-      });
+      probeAdmin(user, 0);
     });
   }
 </script>

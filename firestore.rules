@@ -21,10 +21,12 @@ service cloud.firestore {
       // Chacun peut lire son propre statut ; l'admin peut tout lire (et lister).
       allow read: if request.auth != null && (request.auth.uid == uid || isAdmin());
 
-      // Un utilisateur ne peut créer que sa propre demande, en statut "pending".
+      // Un utilisateur ne peut créer que sa propre demande, en statut "pending",
+      // avec uniquement les champs attendus (pas de données arbitraires).
       allow create: if request.auth != null && request.auth.uid == uid
                     && request.resource.data.status == 'pending'
-                    && request.resource.data.email == request.auth.token.email;
+                    && request.resource.data.email == request.auth.token.email
+                    && request.resource.data.keys().hasOnly(['email', 'displayName', 'status', 'requestedAt']);
 
       // Seul l'admin peut faire évoluer (valider/refuser) ou supprimer une demande.
       allow update, delete: if isAdmin();
